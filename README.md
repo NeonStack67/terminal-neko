@@ -14,7 +14,13 @@ will persist between runs.
 > 还藏着一个小小的“作弊模式”彩蛋。
 
 ---
+如果出现 猫咪饿死了！游戏结束。
 
+删除：src/main/data/save.properties（或你实际存档位置的 save.properties）
+
+用初始版本替换：src/main/data/cat_condition.txt（从 src/main/resources/cat_condition.txt 复制一份覆盖过去）
+
+（可选）如果物品文件也会被你写坏/写空，同样从 resources 覆盖 goods_condition.txt
 ## ✨ Features
 
 - Text-based virtual pet cat in the terminal
@@ -45,6 +51,6 @@ will persist between runs.
 
 2. **Run**
    for windows
-   `run.bat`
+   `bash run.sh`
    for Mac/Linux
    `run.sh`
