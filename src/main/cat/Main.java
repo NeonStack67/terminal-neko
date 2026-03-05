@@ -1,9 +1,14 @@
 package cat;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Main {
@@ -115,6 +120,7 @@ public class Main {
 // }
 
     public static void main(String[] args) throws IOException {
+        Scanner scanner = new Scanner(System.in);
         Scanner in = new Scanner(System.in);
 
         // SaveStore saveStore = new SaveStore(Paths.get("savefile.properties"));
@@ -134,6 +140,7 @@ public class Main {
                   .resolve("../data").normalize();
         var condPath = dataDir.resolve("cat_condition.txt");
         var goodsPath = dataDir.resolve("goods_condition.txt");
+        var idiomPath = dataDir.resolve("idiom.txt");   // ★ 新增：成语库文件
 
         int steps = Timekeeper.decayBy3Hours(saveStore, state, condPath);
         if (steps > 0) System.out.println("已按 3 小时衰减了 " + steps + " 次");
@@ -456,8 +463,17 @@ public class Main {
                 //System.out.println("你训练了猫抓老鼠的技能。（尚未实现数值变化）");
                 case "10" -> System.out.println("你打扫了猫的生活环境。（尚未实现数值变化）");
                 case "11" -> System.out.println("你给猫看了兽医，猫咪恢复了健康。（尚未实现数值变化）");
-                case "12" -> System.out.println("你回答了一些题，赚了一些钱。（尚未实现数值变化）");
-                case "13" -> System.out.println("你去了商店，买了一些物品。（尚未实现数值变化）");
+                case "12" -> 
+                {
+                    doWork(scanner, idiomPath, goodsPath);
+                    break;
+                }
+                //System.out.println("你回答了一些题，赚了一些钱。（尚未实现数值变化）");
+                case "13" -> 
+                {
+                    doShopping(scanner, goodsPath);
+                }
+                //System.out.println("你去了商店，买了一些物品。（尚未实现数值变化）");
                 case "0" -> System.out.println("返回主菜单。");
                 // 比如作弊菜单里：
                 case "cheat" -> {  // 你自己选一个编号 / 关键字
@@ -547,7 +563,7 @@ public class Main {
             // 作弊：不看时间、不看对错，一律成功
             success = true;
         } else {
-            success = input.equals(target) && costMs <= 3000;
+            success = input.equals(target) && costMs <= 5000;
         }
 
         if (success) {
@@ -559,4 +575,121 @@ public class Main {
             System.out.println("很遗憾，老鼠跑掉了……（用时 " + costMs + " ms）");
         }
     }
+
+    // 打工挣钱：成语填空，答对 +5 元，答错无惩罚
+    private static void doWork(Scanner scanner, Path idiomPath, Path goodsPath) throws IOException {
+        // 1. 读取 idiom.txt 里的成语，只保留四个字的
+        List<String> idioms = new ArrayList<>();
+        try (BufferedReader r = Files.newBufferedReader(idiomPath, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty() && line.length() == 4) {  // 只用四字成语
+                    idioms.add(line);
+                }
+            }
+        }
+    
+        if (idioms.isEmpty()) {
+            System.out.println("成语库为空，请检查 src/main/data/idiom.txt。");
+            return;
+        }
+
+        // 2. 随机选一个成语 & 随机挖掉一个字
+        Random random = new Random();
+        String idiom = idioms.get(random.nextInt(idioms.size()));
+
+        int missingIndex = random.nextInt(idiom.length());  // 要挖掉的索引 0~3
+        char answerChar = idiom.charAt(missingIndex);       // 正确答案
+
+        StringBuilder sb = new StringBuilder(idiom);
+        sb.setCharAt(missingIndex, '□');                   // 用 □ 占位
+        String question = sb.toString();
+
+        // 3. 出题
+        System.out.println("【打工挣钱】请把成语里的空格补全：");
+        System.out.println("  " + question);
+        System.out.print("请输入缺失的汉字：");
+
+        String input = scanner.nextLine().trim();
+        if (input.isEmpty()) {
+            System.out.println("你什么也没填，这次没有挣到钱。");
+            return;
+        }
+
+        char userChar = input.charAt(0);
+
+        // 4. 判定 + 加钱
+        if (userChar == answerChar) {
+            boolean ok = CatConditionFile.incMoney(goodsPath, 5);  // ★ 我们下一步来实现
+            if (!ok) {
+                System.out.println("回答正确，但修改金钱时出现问题，请检查 goods_condition.txt。");
+            } else {
+                System.out.println("回答正确！你赚到了 5 元。");
+            }
+        } else {
+            System.out.println("回答错误，这次没有挣到钱。正确答案是：「" + idiom + "」。");
+        }
+    }
+
+    // 购物：成语答对的 5 元就在这里花掉
+private static void doShopping(Scanner scanner, Path goodsPath) throws IOException {
+    // 固定价格
+    final int PRICE_CAT_FOOD   = 5;   // 猫粮
+    final int PRICE_SUPER_FOOD = 9;   // 超级猫粮
+    final int PRICE_MILK       = 7;   // 牛奶
+    final int PRICE_FISH       = 15;  // 鱼
+    final int PRICE_BALL       = 8;   // 球
+
+    while (true) {
+        System.out.println("*************** 商店 ***************");
+        int money = CatConditionFile.readMoney(goodsPath);
+        System.out.println("当前金钱：$" + money);
+        System.out.println();
+        System.out.println("请选择要购买的商品：");
+        System.out.println("1. 猫粮      - " + PRICE_CAT_FOOD   + " 元");
+        System.out.println("2. 超级猫粮  - " + PRICE_SUPER_FOOD + " 元");
+        System.out.println("3. 牛奶      - " + PRICE_MILK       + " 元");
+        System.out.println("4. 鱼        - " + PRICE_FISH       + " 元");
+        System.out.println("5. 球        - " + PRICE_BALL       + " 元");
+        System.out.println("0. 返回主菜单");
+        System.out.print("请输入选项编号：");
+
+        String choice = scanner.nextLine().trim();
+        if (choice.equals("0") || choice.equalsIgnoreCase("exit")) {
+            System.out.println("你离开了商店。");
+            break;
+        }
+
+        int price;
+        int itemIndex;
+        String itemName;
+
+        switch (choice) {
+            case "1" -> { price = PRICE_CAT_FOOD;   itemIndex = 1; itemName = "猫粮"; }
+            case "2" -> { price = PRICE_SUPER_FOOD; itemIndex = 2; itemName = "超级猫粮"; }
+            case "3" -> { price = PRICE_MILK;       itemIndex = 3; itemName = "牛奶"; }
+            case "4" -> { price = PRICE_FISH;       itemIndex = 4; itemName = "鱼"; }
+            case "5" -> { price = PRICE_BALL;       itemIndex = 5; itemName = "球"; }
+            default -> {
+                System.out.println("无效选项，请重新输入。");
+                continue;
+            }
+        }
+
+        // 再读一次钱，防止上面显示后被别的动作改过
+        money = CatConditionFile.readMoney(goodsPath);
+        if (money < price) {
+            System.out.println("你的钱不够，无法购买 " + itemName + "。");
+            continue;
+        }
+
+        // 扣钱 + 增加库存
+        CatConditionFile.incMoney(goodsPath, -price);
+        CatConditionFile.incGoodsCount(goodsPath, itemIndex, +1);
+
+        System.out.println("你购买了 1 个 " + itemName + "，花费 " + price + " 元。");
+        System.out.println();
+    }
+}
 }

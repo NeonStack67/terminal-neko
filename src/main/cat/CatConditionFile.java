@@ -176,6 +176,64 @@ private static String incAster(String oldLine, int delta, int max) {
     return oldLine.replaceFirst("\\*+", stars);
 }
 
+// 金钱变更：在 goods_condition.txt 里找到“金钱 : $xxx”，加上 delta 并写回
+public static boolean incMoney(java.nio.file.Path goodsPath, int delta) {
+    try {
+        // 读入所有行
+        java.util.List<String> lines = java.nio.file.Files.readAllLines(
+                goodsPath, java.nio.charset.StandardCharsets.UTF_8);
+
+        boolean changed = false;
+
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+
+            // 找到包含“金钱”的那一行（你也可以用 line.startsWith("金钱") 更严格）
+            if (line.contains("金钱")) {
+                // 找到 '$' 的位置
+                int dollarPos = line.indexOf('$');
+                if (dollarPos < 0) {
+                    // 没有找到 $，就放弃修改这行
+                    continue;
+                }
+
+                String prefix = line.substring(0, dollarPos + 1); // 包含 '$'
+                String numPart = line.substring(dollarPos + 1).trim(); // 后面的数字
+
+                int current;
+                try {
+                    current = Integer.parseInt(numPart);
+                } catch (NumberFormatException e) {
+                    // 数字坏掉了就当 0 处理
+                    current = 0;
+                }
+
+                int next = current + delta;
+                if (next < 0) {
+                    next = 0; // 不允许负数余额
+                }
+
+                // 保留原来的前缀（包括前面的空格和中文），只改数字
+                String newLine = prefix + next;
+                lines.set(i, newLine);
+                changed = true;
+                break; // 找到一行就退出
+            }
+        }
+
+        if (changed) {
+            java.nio.file.Files.write(
+                    goodsPath,
+                    lines,
+                    java.nio.charset.StandardCharsets.UTF_8);
+        }
+        return changed;
+    } catch (java.io.IOException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+
 // 统计 ♥ 个数（兼容 “♥︎” 带变体选择符：先去掉变体符号）
 private static int countHeart(String s) {
     String cleaned = s.replace("︎", ""); // 去掉 VARIATION SELECTOR-16
@@ -426,6 +484,116 @@ public static void incTrainLevel(java.nio.file.Path file, int delta, int max)
     }
 }
 
+    // 读取当前金钱
+public static int readMoney(Path goodsPath) throws IOException {
+    List<String> lines = Files.readAllLines(goodsPath, StandardCharsets.UTF_8);
+    for (String line : lines) {
+        line = line.trim();
+        if (line.startsWith("金钱")) {
+            // 示例：金钱 : $200
+            int pos = line.indexOf('$');
+            if (pos >= 0) {
+                String num = line.substring(pos + 1).trim();
+                return Integer.parseInt(num);
+            }
+        }
+    }
+    return 0;
+}
+
+// 修改第 item 行的库存（item 从 1 开始：1=猫粮, 2=超级猫粮, ... 5=球）
+public static void incGoodsCount(Path goodsPath, int itemIndex, int delta) throws IOException {
+
+    List<String> lines = Files.readAllLines(goodsPath, StandardCharsets.UTF_8);
+
+    int lineIndex = 2 + (itemIndex - 1); // 1=猫粮对应第3行(下标2)
+    if (lineIndex < 0 || lineIndex >= lines.size()) {
+        throw new IOException("goods_condition.txt 行数不足，找不到物品索引: " + itemIndex);
+    }
+
+    String line = lines.get(lineIndex);
+
+    int starPos = line.indexOf('*');
+    if (starPos < 0) {
+        throw new IOException("物品行缺少 '*'，无法解析数量: " + line);
+    }
+
+    int i = starPos + 1;
+    while (i < line.length() && Character.isWhitespace(line.charAt(i))) i++; // 跳过空格
+
+    int start = i;
+    while (i < line.length() && Character.isDigit(line.charAt(i))) i++;      // 读取数字
+
+    if (start == i) {
+        throw new IOException("'*' 后没有数字，无法解析数量: " + line);
+    }
+
+    int count = Integer.parseInt(line.substring(start, i));
+    int next = count + delta;
+    if (next < 0) next = 0;
+
+    // 保留数字后面的原始内容（括号说明等）
+    String newLine = line.substring(0, start) + next + line.substring(i);
+    lines.set(lineIndex, newLine);
+
+    Files.write(goodsPath, lines, StandardCharsets.UTF_8);
+    
+    // List<String> lines = Files.readAllLines(goodsPath, StandardCharsets.UTF_8);
+
+    // // 猫粮一行在文件里是第 3 行，所以偏移量 = 2
+    // int lineIndex = 2 + (itemIndex - 1);   // List 下标从 0 开始
+    // String line = lines.get(lineIndex);
+
+    // // 例： "1. 猫粮 *5 (恢复一点饥饿值)"
+    // int starPos = line.indexOf('*');
+    // int spaceAfter = line.indexOf(' ', starPos);
+    // if (starPos >= 0 && spaceAfter > starPos) {
+    //     String numStr = line.substring(starPos + 1, spaceAfter);
+    //     int count = Integer.parseInt(numStr);
+    //     int next = count + delta;
+    //     if (next < 0) next = 0;
+
+    //     String newLine = line.substring(0, starPos + 1) + next + line.substring(spaceAfter);
+    //     lines.set(lineIndex, newLine);
+    // }
+
+    // Files.write(goodsPath, lines, StandardCharsets.UTF_8);
+}
+// public static void inc:contentReference[oaicite:3]{index=3}Path, int itemIndex, int delta) throws IOException {
+//     List<String> lines = Files.readAllLines(goodsPath, StandardCharsets.UTF_8);
+
+//     int lineIndex = 2 + (itemIndex - 1); // 1=猫粮对应第3行(下标2)
+//     if (lineIndex < 0 || lineIndex >= lines.size()) {
+//         throw new IOException("goods_condition.txt 行数不足，找不到物品索引: " + itemIndex);
+//     }
+
+//     String line = lines.get(lineIndex);
+
+//     int starPos = line.indexOf('*');
+//     if (starPos < 0) {
+//         throw new IOException("物品行缺少 '*'，无法解析数量: " + line);
+//     }
+
+//     int i = starPos + 1;
+//     while (i < line.length() && Character.isWhitespace(line.charAt(i))) i++; // 跳过空格
+
+//     int start = i;
+//     while (i < line.length() && Character.isDigit(line.charAt(i))) i++;      // 读取数字
+
+//     if (start == i) {
+//         throw new IOException("'*' 后没有数字，无法解析数量: " + line);
+//     }
+
+//     int count = Integer.parseInt(line.substring(start, i));
+//     int next = count + delta;
+//     if (next < 0) next = 0;
+
+//     // 保留数字后面的原始内容（括号说明等）
+//     String newLine = line.substring(0, start) + next + line.substring(i);
+//     lines.set(lineIndex, newLine);
+
+//     Files.write(goodsPath, lines, StandardCharsets.UTF_8);
+// }
     //     /** 洗澡：清洁度增加 delta 个 *，最多 maxStars 个 */
     // public static boolean wash(java.nio.file.Path file, int delta, int maxStars)
     //         throws java.io.IOException {

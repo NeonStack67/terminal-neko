@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Java build outputs
+*.class
+out/
+src/main/out/
+chinese-xinhua-master.zip
+chinese-xinhua-master/
