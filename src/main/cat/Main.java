@@ -142,9 +142,27 @@ public class Main {
         var goodsPath = dataDir.resolve("goods_condition.txt");
         var idiomPath = dataDir.resolve("idiom.txt");   // ★ 新增：成语库文件
 
+        // int steps = Timekeeper.decayBy3Hours(saveStore, state, condPath);
+        // if (steps > 0) System.out.println("已按 3 小时衰减了 " + steps + " 次");
+    try {
         int steps = Timekeeper.decayBy3Hours(saveStore, state, condPath);
-        if (steps > 0) System.out.println("已按 3 小时衰减了 " + steps + " 次");
+        if (steps > 0) {
+            System.out.println("已按 3 小时衰减了 " + steps + " 次");
+        }
+    } catch (CatConditionFile.CatDiedException e) {
+        System.out.println(e.getMessage());
+        System.out.print("要重新领养一只新猫吗？(y/N)：");
+        String ans = in.nextLine().trim();
 
+        if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+            resetForReAdopt(savePath, condPath);
+            state = saveStore.read();
+            System.out.println("你重新领养了一只新的小猫。");
+        } else {
+            System.out.println("已退出程序。");
+            return;
+        }
+    }
 
         // if (days > 0) {
         //     System.out.println("游戏已推进 " + days + " 天");
@@ -173,15 +191,27 @@ public class Main {
             System.out.println("  输入exit 退出");
             System.out.println("存档路径: " + savePath.toAbsolutePath());
 
-        while (true) 
-        {
+        while (true) {
+        try {
             System.out.print("  请输入选项编号：");
             String x = in.nextLine();
             if (x.equalsIgnoreCase("h")) {
                 // 从 resources 里读取
-                try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(
-                                Main.class.getResourceAsStream("/how_to_play.txt"), "UTF-8"))) {
+                // try (BufferedReader br = new BufferedReader(
+                //         new InputStreamReader(
+                //                 Main.class.getResourceAsStream("/how_to_play.txt"), "UTF-8"))) {
+                //     String line;
+                //     while ((line = br.readLine()) != null) {
+                //         System.out.println(line);
+                //     }
+                // } catch (IOException e) {
+                //     System.out.println("无法读取帮助文件: " + e.getMessage());
+                // }
+                Path helpPath = Paths.get(System.getProperty("user.dir"))
+                .resolve("../resources/how_to_play.txt")
+                .normalize();
+
+                try (BufferedReader br = Files.newBufferedReader(helpPath, StandardCharsets.UTF_8)) {
                     String line;
                     while ((line = br.readLine()) != null) {
                         System.out.println(line);
@@ -282,62 +312,62 @@ public class Main {
                 }
             }
             case "4" -> { // 喂鱼
-    // 先检查鱼是不是还有（你原来怎么写的就怎么保留）
-    // 比如：检查 goods_condition.txt 里的数量，扣一条鱼
+                // 先检查鱼是不是还有（你原来怎么写的就怎么保留）
+                // 比如：检查 goods_condition.txt 里的数量，扣一条鱼
 
-    boolean canGrantTicket;
-    if (CHEAT_MODE) {
-        // 作弊模式：每次喂鱼都能拿训练机会
-        canGrantTicket = true;
-    } else {
-        // 正常模式：一天只能拿一次
-        canGrantTicket = (state.lastFishDay != state.dayCount);
-    }
+                boolean canGrantTicket;
+                if (CHEAT_MODE) {
+                    // 作弊模式：每次喂鱼都能拿训练机会
+                    canGrantTicket = true;
+                } else {
+                    // 正常模式：一天只能拿一次
+                    canGrantTicket = (state.lastFishDay != state.dayCount);
+                }
 
-    if (!canGrantTicket) {
-        System.out.println("你又给猫喂了一条鱼，但今天的训练机会已经拿过了。");
-    } else {
-        state.trainTickets++;            // 训练机会 +1
-        state.lastFishDay = state.dayCount;  // 作弊模式可以保留这行，也无所谓
-        saveStore.write(state);
+                if (!canGrantTicket) {
+                    System.out.println("你又给猫喂了一条鱼，但今天的训练机会已经拿过了。");
+                } else {
+                    state.trainTickets++;            // 训练机会 +1
+                    state.lastFishDay = state.dayCount;  // 作弊模式可以保留这行，也无所谓
+                    saveStore.write(state);
 
-        System.out.println("你给猫喂了一条鱼，获得了一次训练机会！");
-        if (CHEAT_MODE) {
-            System.out.println("【作弊模式】今天可以反复喂鱼拿训练机会。");
-        }
-    }
-}
-    //         case "4" -> {
-    //         // 喂鱼：每次都会消耗一条鱼，但“训练机会”一天只增加一次
-    //         try {
-    //         // 1. 先扣掉一条鱼
-    //         boolean used = CatConditionFile.useItem(goodsPath, "鱼");
-    //         if (!used) {
-    //             System.out.println("你想给猫喂鱼，但物品栏里已经没有鱼了。");
-    //             break;  // 没鱼就不要再处理训练机会了
-    //         }
+                    System.out.println("你给猫喂了一条鱼，获得了一次训练机会！");
+                    if (CHEAT_MODE) {
+                        System.out.println("【作弊模式】今天可以反复喂鱼拿训练机会。");
+                    }
+                }
+            }
+                //         case "4" -> {
+                //         // 喂鱼：每次都会消耗一条鱼，但“训练机会”一天只增加一次
+                //         try {
+                //         // 1. 先扣掉一条鱼
+                //         boolean used = CatConditionFile.useItem(goodsPath, "鱼");
+                //         if (!used) {
+                //             System.out.println("你想给猫喂鱼，但物品栏里已经没有鱼了。");
+                //             break;  // 没鱼就不要再处理训练机会了
+                //         }
 
-    //         // 2. 读取当前存档状态
-    //         // SaveStore.SaveState state = saveStore.read();
-    //         state = saveStore.read();   // 不再写类型，只是给已经存在的 state 重新赋值
+                //         // 2. 读取当前存档状态
+                //         // SaveStore.SaveState state = saveStore.read();
+                //         state = saveStore.read();   // 不再写类型，只是给已经存在的 state 重新赋值
 
-    //         // 3. 判断今天有没有通过鱼增加过训练机会
-    //         if (state.lastFishDay == state.dayCount) {
-    //             // 今天已经用过鱼拿训练机会了，这次只是浪费一条鱼
-    //             System.out.println("你又给猫喂了一条鱼，但今天的训练机会已经拿过了。");
-    //         } else {
-    //             // 今天第一次喂鱼：增加一次训练机会
-    //             state.trainTickets += 1;
-    //             state.lastFishDay = state.dayCount;
-    //             // saveStore.save(state);
-    //             saveStore.write(state);
-    //             System.out.println("你给猫喂了一条鱼，获得了一次训练机会！（今天不能再通过喂鱼获取训练机会）");
-    //         }
+                //         // 3. 判断今天有没有通过鱼增加过训练机会
+                //         if (state.lastFishDay == state.dayCount) {
+                //             // 今天已经用过鱼拿训练机会了，这次只是浪费一条鱼
+                //             System.out.println("你又给猫喂了一条鱼，但今天的训练机会已经拿过了。");
+                //         } else {
+                //             // 今天第一次喂鱼：增加一次训练机会
+                //             state.trainTickets += 1;
+                //             state.lastFishDay = state.dayCount;
+                //             // saveStore.save(state);
+                //             saveStore.write(state);
+                //             System.out.println("你给猫喂了一条鱼，获得了一次训练机会！（今天不能再通过喂鱼获取训练机会）");
+                //         }
 
-    //     } catch (java.io.IOException e) {
-    //         System.out.println("喂鱼时发生错误：" + e.getMessage());
-    //     }
-    // }
+                //     } catch (java.io.IOException e) {
+                //         System.out.println("喂鱼时发生错误：" + e.getMessage());
+                //     }
+                // }
 
 
                 case "5" -> 
@@ -516,7 +546,46 @@ public class Main {
                 System.out.println("无效输入，请重新输入。");
             }
             System.out.println();
+        }  catch (CatConditionFile.CatDiedException e) {
+            System.out.println(e.getMessage());
+            System.out.print("要重新领养一只新猫吗？(y/N)：");
+            String ans = in.nextLine().trim();
+
+            if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+                try {
+                    resetForReAdopt(savePath, condPath);
+                    state = saveStore.read();
+                    System.out.println("你重新领养了一只新的小猫。");
+                } catch (IOException ex) {
+                    System.out.println("重置失败：" + ex.getMessage());
+                    break;
+                }
+            } else {
+                System.out.println("已退出程序。");
+                break;
+            }
         }
+    }
+    // }   catch (CatConditionFile.CatDiedException e) {
+    //         System.out.println(e.getMessage());
+    //         System.out.print("要重新领养一只新猫吗？(y/N)：");
+    //         String ans = in.nextLine().trim();
+
+    //         if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+    //             try {
+    //                 resetForReAdopt(savePath, condPath);
+    //                 state = saveStore.read();
+    //                 System.out.println("你重新领养了一只新的小猫。");
+    //             } catch (IOException ex) {
+    //                 System.out.println("重置失败：" + ex.getMessage());
+    //                 break;
+    //             }
+    //         } else {
+    //             System.out.println("已退出程序。");
+    //             break;
+    //         }
+    //     }
+    // }
         in.close();
     }
     // isCheat = false  正常训练（有次数限制、有时间与正确性要求）
@@ -548,7 +617,7 @@ public class Main {
 
         System.out.println("训练开始！");
         if (!isCheat) {
-            System.out.println("请在 3 秒内输入下面这个单词：");
+            System.out.println("请在 5 秒内输入下面这个单词：");
         } else {
             System.out.println("【作弊模式】随便输入什么都算成功：");
         }
@@ -633,63 +702,92 @@ public class Main {
     }
 
     // 购物：成语答对的 5 元就在这里花掉
-private static void doShopping(Scanner scanner, Path goodsPath) throws IOException {
-    // 固定价格
-    final int PRICE_CAT_FOOD   = 5;   // 猫粮
-    final int PRICE_SUPER_FOOD = 9;   // 超级猫粮
-    final int PRICE_MILK       = 7;   // 牛奶
-    final int PRICE_FISH       = 15;  // 鱼
-    final int PRICE_BALL       = 8;   // 球
+    private static void doShopping(Scanner scanner, Path goodsPath) throws IOException {
+        // 固定价格
+        final int PRICE_CAT_FOOD   = 5;   // 猫粮
+        final int PRICE_SUPER_FOOD = 9;   // 超级猫粮
+        final int PRICE_MILK       = 7;   // 牛奶
+        final int PRICE_FISH       = 15;  // 鱼
+        final int PRICE_BALL       = 8;   // 球
 
-    while (true) {
-        System.out.println("*************** 商店 ***************");
-        int money = CatConditionFile.readMoney(goodsPath);
-        System.out.println("当前金钱：$" + money);
-        System.out.println();
-        System.out.println("请选择要购买的商品：");
-        System.out.println("1. 猫粮      - " + PRICE_CAT_FOOD   + " 元");
-        System.out.println("2. 超级猫粮  - " + PRICE_SUPER_FOOD + " 元");
-        System.out.println("3. 牛奶      - " + PRICE_MILK       + " 元");
-        System.out.println("4. 鱼        - " + PRICE_FISH       + " 元");
-        System.out.println("5. 球        - " + PRICE_BALL       + " 元");
-        System.out.println("0. 返回主菜单");
-        System.out.print("请输入选项编号：");
+        while (true) {
+            System.out.println("*************** 商店 ***************");
+            int money = CatConditionFile.readMoney(goodsPath);
+            System.out.println("当前金钱：$" + money);
+            System.out.println();
+            System.out.println("请选择要购买的商品：");
+            System.out.println("1. 猫粮      - " + PRICE_CAT_FOOD   + " 元");
+            System.out.println("2. 超级猫粮  - " + PRICE_SUPER_FOOD + " 元");
+            System.out.println("3. 牛奶      - " + PRICE_MILK       + " 元");
+            System.out.println("4. 鱼        - " + PRICE_FISH       + " 元");
+            System.out.println("5. 球        - " + PRICE_BALL       + " 元");
+            System.out.println("0. 返回主菜单");
+            System.out.print("请输入选项编号：");
 
-        String choice = scanner.nextLine().trim();
-        if (choice.equals("0") || choice.equalsIgnoreCase("exit")) {
-            System.out.println("你离开了商店。");
-            break;
-        }
+            String choice = scanner.nextLine().trim();
+            if (choice.equals("0") || choice.equalsIgnoreCase("exit")) {
+                System.out.println("你离开了商店。");
+                break;
+            }
 
-        int price;
-        int itemIndex;
-        String itemName;
+            int price;
+            int itemIndex;
+            String itemName;
 
-        switch (choice) {
-            case "1" -> { price = PRICE_CAT_FOOD;   itemIndex = 1; itemName = "猫粮"; }
-            case "2" -> { price = PRICE_SUPER_FOOD; itemIndex = 2; itemName = "超级猫粮"; }
-            case "3" -> { price = PRICE_MILK;       itemIndex = 3; itemName = "牛奶"; }
-            case "4" -> { price = PRICE_FISH;       itemIndex = 4; itemName = "鱼"; }
-            case "5" -> { price = PRICE_BALL;       itemIndex = 5; itemName = "球"; }
-            default -> {
-                System.out.println("无效选项，请重新输入。");
+            switch (choice) {
+                case "1" -> { price = PRICE_CAT_FOOD;   itemIndex = 1; itemName = "猫粮"; }
+                case "2" -> { price = PRICE_SUPER_FOOD; itemIndex = 2; itemName = "超级猫粮"; }
+                case "3" -> { price = PRICE_MILK;       itemIndex = 3; itemName = "牛奶"; }
+                case "4" -> { price = PRICE_FISH;       itemIndex = 4; itemName = "鱼"; }
+                case "5" -> { price = PRICE_BALL;       itemIndex = 5; itemName = "球"; }
+                default -> {
+                    System.out.println("无效选项，请重新输入。");
+                    continue;
+                }
+            }
+
+            // 再读一次钱，防止上面显示后被别的动作改过
+            money = CatConditionFile.readMoney(goodsPath);
+            if (money < price) {
+                System.out.println("你的钱不够，无法购买 " + itemName + "。");
                 continue;
             }
+
+            // 扣钱 + 增加库存
+            CatConditionFile.incMoney(goodsPath, -price);
+            CatConditionFile.incGoodsCount(goodsPath, itemIndex, +1);
+
+            System.out.println("你购买了 1 个 " + itemName + "，花费 " + price + " 元。");
+            System.out.println();
         }
-
-        // 再读一次钱，防止上面显示后被别的动作改过
-        money = CatConditionFile.readMoney(goodsPath);
-        if (money < price) {
-            System.out.println("你的钱不够，无法购买 " + itemName + "。");
-            continue;
-        }
-
-        // 扣钱 + 增加库存
-        CatConditionFile.incMoney(goodsPath, -price);
-        CatConditionFile.incGoodsCount(goodsPath, itemIndex, +1);
-
-        System.out.println("你购买了 1 个 " + itemName + "，花费 " + price + " 元。");
-        System.out.println();
     }
-}
+
+    // private static void resetForReAdopt(Path savePath, Path condPath) throws IOException {
+    //     // 1. 删除旧存档
+    //     Files.deleteIfExists(savePath);
+
+    //     // 2. 用 resources 里的初始猫状态覆盖 data 里的猫状态
+    //     try (var in = Main.class.getResourceAsStream("/cat_condition.txt")) {
+    //         if (in == null) {
+    //             throw new IOException("找不到资源模板 /cat_condition.txt");
+    //         }
+    //         Files.copy(in, condPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    //     }
+    // }
+
+    private static void resetForReAdopt(Path savePath, Path condPath) throws IOException {
+        // 1. 删除旧存档
+        Files.deleteIfExists(savePath);
+
+        // 2. 从 src/main/resources 拷贝初始猫状态到 data
+        Path template = Paths.get(System.getProperty("user.dir"))
+                .resolve("../resources/cat_condition.txt")
+                .normalize();
+
+        if (!Files.exists(template)) {
+            throw new IOException("找不到模板文件: " + template);
+        }
+
+        Files.copy(template, condPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
 }
