@@ -25,7 +25,7 @@ public final class Timekeeper {
     /**
      * 根据与上次时间戳的间隔，按“每 3 小时”为 1 步做衰减。
      * - 饥饿度/口渴度/亲密度/兴奋度：每步 -1 个 ♥（不低于 0）
-     * - 清洁度：每步 -6 个 *
+     * - 清洁度：每步 -6 个 #
      * 返回本次衰减用了多少步（即经过了多少个 3 小时）
      */
     public static int decayBy3Hours(SaveStore store, SaveStore.SaveState state,

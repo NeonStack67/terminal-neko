@@ -108,7 +108,7 @@ public final class CatConditionFile {
         // int next = Math.max(0, current - step);
         // ☆ 关键改动：不再 Math.max，而是先算出 next，若 <0 直接游戏结束
         int next = current - step;
-        if (next < 0) {
+        if (next <= 0) {
             gameOverByLabel(label); // 见“新增方法”小节
             // System.exit 已退出；下面 return 只是语法需要
             return line;
@@ -139,42 +139,63 @@ public final class CatConditionFile {
         String prefix = line.substring(0, idx + 1);  // 含“：”
         String stars = line.substring(idx + 1).trim();
 
-        long have = stars.chars().filter(ch -> ch == '*').count();
+        long have = stars.chars().filter(ch -> ch == '#').count();
         long next = have - k;
-        if (next < 0) {
+        if (next <= 0) {
             // 清洁度为负 → 感染病菌
             // System.out.println("猫咪感染病菌！游戏结束。");
             // System.exit(0);
             // return line;
             throw new CatDiedException("猫咪感染病菌！游戏结束。");
         }
-        return prefix + "*".repeat((int) next);
+        return prefix + "#".repeat((int) next);
     }
 
-    // —— 辅助：清洁度星号递增 ——
-    // 根据这一行里当前有多少个 *，+delta，最多不超过 max，返回新的一行
-    private static String incAster(String oldLine, int delta, int max) {
-        // 找到第一段连续的星号，把它当成清洁度条
-        int current = (int)oldLine.chars().filter(ch -> ch == '*').count();
+    // // —— 辅助：清洁度星号递增 ——
+    // // 根据这一行里当前有多少个 *，+delta，最多不超过 max，返回新的一行
+    // private static String incAster(String oldLine, int delta, int max) {
+    //     // 找到第一段连续的星号，把它当成清洁度条
+    //     int current = (int)oldLine.chars().filter(ch -> ch == '#').count();
+
+    //     int next = current + delta;
+    //     if (next > max) {
+    //         next = max;     // 不超过上限
+    //     }
+    //     if (next < 0) {
+    //         next = 0;       // 理论上用不到，只是防御
+    //     }
+
+    //     // 没变化就直接返回原行（例如已经是满 48 个）
+    //     if (next == current) {
+    //         return oldLine;
+    //     }
+
+    //     String stars = "#".repeat(next);
+
+    //     // 用第一段连续的星号替换成新的星号串
+    //     // "\\*+" 的意思是“至少一个 *”
+    //     return oldLine.replaceFirst("#+", stars);
+    // }
+
+        private static String incAster(String oldLine, int delta, int max) {
+        int idx = oldLine.indexOf('：');
+        if (idx < 0) idx = oldLine.indexOf(':');
+        if (idx < 0) return oldLine;
+
+        String prefix = oldLine.substring(0, idx + 1);
+        String marksPart = oldLine.substring(idx + 1).trim();
+
+        int current = (int) marksPart.chars().filter(ch -> ch == '#').count();
 
         int next = current + delta;
-        if (next > max) {
-            next = max;     // 不超过上限
-        }
-        if (next < 0) {
-            next = 0;       // 理论上用不到，只是防御
-        }
+        if (next > max) next = max;
+        if (next < 0) next = 0;
 
-        // 没变化就直接返回原行（例如已经是满 48 个）
         if (next == current) {
             return oldLine;
         }
 
-        String stars = "*".repeat(next);
-
-        // 用第一段连续的星号替换成新的星号串
-        // "\\*+" 的意思是“至少一个 *”
-        return oldLine.replaceFirst("\\*+", stars);
+        return prefix + "#".repeat(next);
     }
 
     // 金钱变更：在 goods_condition.txt 里找到“金钱 : $xxx”，加上 delta 并写回
@@ -272,7 +293,7 @@ public final class CatConditionFile {
             } else if (line.contains("兴奋度")) {
                 line = "兴奋度： (♥♥♥♥)   (4/4)";
             } else if (line.stripLeading().startsWith("清洁度")) {
-                line = "清洁度： ************************************************"; // 随便给一串足够多的 *
+                line = "清洁度： ################################################"; // 给48个的 #
             }
             lines.set(i, line);
         }
@@ -902,6 +923,49 @@ public final class CatConditionFile {
 
         int next = value - 1;
         return line.substring(0, startNum) + next + line.substring(endNum);
+    }
+
+    public static void decAngelCount(Path file) throws IOException {
+        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+
+        for (int i = 0; i < lines.size(); i++) {
+            String s = lines.get(i).trim();
+            if (s.startsWith("天使：") || s.startsWith("天使:")) {
+                int idx = s.indexOf('：');
+                if (idx < 0) idx = s.indexOf(':');
+                if (idx >= 0) {
+                    int n = Integer.parseInt(s.substring(idx + 1).trim());
+                    if (n > 0) n--;
+                    lines.set(i, "天使：" + n);
+                    break;
+                }
+            }
+        }
+
+        Files.write(file, lines, StandardCharsets.UTF_8);
+    }
+
+    // 读取当前天使数量
+    public static int getAngelCount(Path file) throws IOException {
+        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+
+        for (String line : lines) {
+            String s = line.trim();
+            if (s.startsWith("天使：") || s.startsWith("天使:")) {
+                int idx = s.indexOf('：');
+                if (idx < 0) idx = s.indexOf(':');
+                if (idx >= 0) {
+                    String num = s.substring(idx + 1).trim();
+                    return Integer.parseInt(num);
+                }
+            }
+        }
+        return 0;
+    }
+
+    // 检查是否还有天使    
+    public static boolean hasAngel(Path file) throws IOException {
+        return getAngelCount(file) > 0;
     }
 
     /** 通用喝水：口渴度增加 delta（正数），最多 maxHearts

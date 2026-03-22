@@ -13,7 +13,8 @@ import java.nio.file.Paths;
 
 public class Main {
     // 作弊模式总开关：true = 开启开发者 / 作弊模式
-    private static final boolean CHEAT_MODE = true;
+    private static final boolean CHEAT_MODE = false; // 作弊模式：训练不受次数、时间、正确性的限制，方便测试训练功能
+    private static final boolean GOD_MODE = true; // 上帝模式：猫咪不会死，状态自动恢复（不消耗天使猫），方便测试不死之身功能
     // 想关掉作弊的时候只要改成 false 就行
     // 在 Main 类里新加这个方法（在 main(...) 下面就行）
 //     private static void doTraining(Scanner in,
@@ -150,18 +151,56 @@ public class Main {
             System.out.println("已按 3 小时衰减了 " + steps + " 次");
         }
     } catch (CatConditionFile.CatDiedException e) {
-        System.out.println(e.getMessage());
-        System.out.print("要重新领养一只新猫吗？(y/N)：");
-        String ans = in.nextLine().trim();
+        try {
+            if (GOD_MODE || CatConditionFile.hasAngel(condPath)) {
+                CatConditionFile.restoreAll(condPath);
 
-        if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
-            resetForReAdopt(savePath, condPath);
-            state = saveStore.read();
-            System.out.println("你重新领养了一只新的小猫。");
-        } else {
-            System.out.println("已退出程序。");
+                if (!GOD_MODE) {
+                    CatConditionFile.decAngelCount(condPath);
+                }
+
+                state = saveStore.read();
+                // 地狱之子，无用天使（如果注释后两行）
+                state.lastTs = System.currentTimeMillis();
+                saveStore.write(state);
+
+                if (GOD_MODE) {
+                    System.out.println("达成成就：代码之子，不死之身");
+                }
+                if (!GOD_MODE) {
+                    System.out.println("达成成就：超越生死");
+                }
+                System.out.println("天使猫自动发动！已阻止死亡并恢复所有状态。");
+            } else {
+                System.out.println(e.getMessage());
+                System.out.print("要重新领养一只新猫吗？(y/N)：");
+                String ans = in.nextLine().trim();
+
+                if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+                    resetForReAdopt(savePath, condPath);
+                    state = saveStore.read();
+                    System.out.println("你重新领养了一只新的小猫。");
+                } else {
+                    System.out.println("已退出程序。");
+                    return;
+                }
+            }
+        } catch (IOException ex) {
+            System.out.println("天使猫/重置处理失败：" + ex.getMessage());
             return;
         }
+        // System.out.println(e.getMessage());
+        // System.out.print("要重新领养一只新猫吗？(y/N)：");
+        // String ans = in.nextLine().trim();
+
+        // if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+        //     resetForReAdopt(savePath, condPath);
+        //     state = saveStore.read();
+        //     System.out.println("你重新领养了一只新的小猫。");
+        // } else {
+        //     System.out.println("已退出程序。");
+        //     return;
+        // }
     }
 
         // if (days > 0) {
@@ -195,6 +234,9 @@ public class Main {
         try {
             System.out.print("  请输入选项编号：");
             String x = in.nextLine();
+            if (x.equalsIgnoreCase("die")) {
+                throw new CatConditionFile.CatDiedException("【调试模式】猫咪立即死亡。");
+            }
             if (x.equalsIgnoreCase("h")) {
                 // 从 resources 里读取
                 // try (BufferedReader br = new BufferedReader(
@@ -443,7 +485,7 @@ public class Main {
                 //System.out.println("你和猫玩了一会儿玩具。（尚未实现数值变化）");
                 case "8" -> 
                     {
-                        System.out.println("你帮猫洗了个澡。（清洁度 +24 个星号）");
+                        System.out.println("你帮猫洗了个澡。（清洁度 +24 个井号）");
 
                     try {
                         boolean ok = CatConditionFile.wash(condPath, 24, 48);  // delta = 24, max = 48
@@ -534,36 +576,82 @@ public class Main {
             } else if (x.equalsIgnoreCase("c")) {
                 System.out.println("你可重新领养宠物。");
             } else if (x.equalsIgnoreCase("v")) {
-                System.out.println("你可触发天使猫，恢复所有点数到最大值，如果猫咪出走，按此键可张贴寻猫启事，连续张贴7天猫咪回家。");
-                System.out.println("你使用了天使猫技能，正在恢复所有状态……");
                 try {
-                CatConditionFile.restoreAll(condPath);
-                System.out.println("所有状态已恢复到最大值！");
+                    if (GOD_MODE || CatConditionFile.hasAngel(condPath)) {
+                        CatConditionFile.restoreAll(condPath);
+
+                        if (!GOD_MODE) {
+                            CatConditionFile.decAngelCount(condPath);
+                        }
+
+                        System.out.println("天使猫发动，所有状态已恢复！");
+                    } else {
+                        System.out.println("你现在没有天使猫。");
+                    }
                 } catch (IOException e) {
-                System.out.println("恢复状态时出错：" + e.getMessage());
+                    System.out.println("读取/恢复状态时出错：" + e.getMessage());
                 }
+                // System.out.println("你可触发天使猫，恢复所有点数到最大值，如果猫咪出走，按此键可张贴寻猫启事，连续张贴7天猫咪回家。");
+                // System.out.println("你使用了天使猫技能，正在恢复所有状态……");
+                // try {
+                // CatConditionFile.restoreAll(condPath);
+                // System.out.println("所有状态已恢复到最大值！");
+                // } catch (IOException e) {
+                // System.out.println("恢复状态时出错：" + e.getMessage());
+                // }
             } else {
                 System.out.println("无效输入，请重新输入。");
             }
             System.out.println();
         }  catch (CatConditionFile.CatDiedException e) {
-            System.out.println(e.getMessage());
-            System.out.print("要重新领养一只新猫吗？(y/N)：");
-            String ans = in.nextLine().trim();
+            try {
+                if (GOD_MODE || CatConditionFile.hasAngel(condPath)) {
+                    CatConditionFile.restoreAll(condPath);
 
-            if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
-                try {
-                    resetForReAdopt(savePath, condPath);
+                    if (!GOD_MODE) {
+                        CatConditionFile.decAngelCount(condPath);
+                    }
+
                     state = saveStore.read();
-                    System.out.println("你重新领养了一只新的小猫。");
-                } catch (IOException ex) {
-                    System.out.println("重置失败：" + ex.getMessage());
-                    break;
+                    // 地狱之子，无用天使
+                    state.lastTs = System.currentTimeMillis();
+                    saveStore.write(state);
+                    System.out.println("天使猫自动发动！已阻止死亡并恢复所有状态。");
+                } else {
+                    System.out.println(e.getMessage());
+                    System.out.print("要重新领养一只新猫吗？(y/N)：");
+                    String ans = in.nextLine().trim();
+
+                    if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+                        resetForReAdopt(savePath, condPath);
+                        state = saveStore.read();
+                        System.out.println("你重新领养了一只新的小猫。");
+                    } else {
+                        System.out.println("已退出程序。");
+                        break;
+                    }
                 }
-            } else {
-                System.out.println("已退出程序。");
+            } catch (IOException ex) {
+                System.out.println("天使猫/重置处理失败：" + ex.getMessage());
                 break;
             }
+            // System.out.println(e.getMessage());
+            // System.out.print("要重新领养一只新猫吗？(y/N)：");
+            // String ans = in.nextLine().trim();
+
+            // if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+            //     try {
+            //         resetForReAdopt(savePath, condPath);
+            //         state = saveStore.read();
+            //         System.out.println("你重新领养了一只新的小猫。");
+            //     } catch (IOException ex) {
+            //         System.out.println("重置失败：" + ex.getMessage());
+            //         break;
+            //     }
+            // } else {
+            //     System.out.println("已退出程序。");
+            //     break;
+            // }
         }
     }
     // }   catch (CatConditionFile.CatDiedException e) {

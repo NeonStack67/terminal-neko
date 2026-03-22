@@ -18,7 +18,7 @@ will persist between runs.
 
 删除：src/main/data/save.properties（或你实际存档位置的 save.properties）
 
-用初始版本替换：src/main/data/cat_condition.txt（从 src/main/resources/cat_condition.txt 复制一份覆盖过去）
+用初始版本替换：src/main/data/cat_condition.txt（从 src/main/resources/cat_condition.txt 复制一份覆盖过去）（现在不需要了，直接重新领养）
 
 （可选）如果物品文件也会被你写坏/写空，同样从 resources 覆盖 goods_condition.txt
 ## ✨ Features
