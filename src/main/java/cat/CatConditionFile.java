@@ -33,6 +33,19 @@ public final class CatConditionFile {
                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
+    /** 将文件中的“名字：xxx”改为玩家自定义的名字 */
+    public static void writeName(Path file, String name) throws IOException {
+        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+        for (int i = 0; i < lines.size(); i++) {
+            String s = lines.get(i).trim();
+            if (s.startsWith("名字：") || s.startsWith("名字:")) {
+                lines.set(i, "名字：" + name);
+                break;
+            }
+        }
+        Files.write(file, lines, StandardCharsets.UTF_8);
+    }
+
     /** 若工作副本不存在，从资源复制一份出来（资源路径示例：/cat_condition.txt） */
     public static void ensureWorkCopy(Path workFile, String resourcePath) throws IOException {
         if (Files.exists(workFile)) return;
@@ -57,8 +70,34 @@ public final class CatConditionFile {
     //                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     // }
     // 按 steps(每步=3小时) 衰减：饥饿/口渴/亲密/兴奋 各 -steps 个 ♥；清洁度 -steps*6 个 *
+//    public static void degrade(java.nio.file.Path file, int steps) throws java.io.IOException {
+//        if (steps <= 0) return;
+//
+//        java.util.List<String> lines = java.nio.file.Files.readAllLines(file, java.nio.charset.StandardCharsets.UTF_8);
+//        for (int i = 0; i < lines.size(); i++) {
+//            String line = lines.get(i);
+//
+//            line = decHearts(line, "饥饿度：", steps, 6);
+//            line = decHearts(line, "口渴度：", steps, 4);
+//            line = decHearts(line, "亲密度：", steps, 4);
+//            line = decHearts(line, "兴奋度：", steps, 4);
+//
+//            // if (line.stripLeading().startsWith("清洁度")) {
+//            // line = decAster(line, steps * 6);
+//            // }
+//            if (line.stripLeading().startsWith("清洁度")) {
+//                line = decAster(line, steps * 6);
+//            }
+//
+//            lines.set(i, line);
+//        }
+//        java.nio.file.Files.write(file, lines, java.nio.charset.StandardCharsets.UTF_8);
+//    }
+
     public static void degrade(java.nio.file.Path file, int steps) throws java.io.IOException {
         if (steps <= 0) return;
+
+        boolean gotSick = false; // ⭐ 新增：生病标记
 
         java.util.List<String> lines = java.nio.file.Files.readAllLines(file, java.nio.charset.StandardCharsets.UTF_8);
         for (int i = 0; i < lines.size(); i++) {
@@ -69,16 +108,28 @@ public final class CatConditionFile {
             line = decHearts(line, "亲密度：", steps, 4);
             line = decHearts(line, "兴奋度：", steps, 4);
 
-            // if (line.stripLeading().startsWith("清洁度")) {
-            // line = decAster(line, steps * 6);
-            // }
             if (line.stripLeading().startsWith("清洁度")) {
-                line = decAster(line, steps * 6);
+                try {
+                    line = decAster(line, steps * 6);
+                } catch (CatSickException e) {
+                    gotSick = true; // ⭐ 拦截生病异常，打上标记，但不中断循环
+                    // 把清洁度强行清零（保留前缀）
+                    int idx = line.indexOf('：');
+                    if (idx < 0) idx = line.indexOf(':');
+                    line = line.substring(0, idx + 1) + " ";
+                }
             }
 
             lines.set(i, line);
         }
+
+        // ⭐ 确保所有衰减后的数值被写入文件！
         java.nio.file.Files.write(file, lines, java.nio.charset.StandardCharsets.UTF_8);
+
+        // ⭐ 文件保存完毕后，如果刚才标记了生病，再向上抛出异常给 Timekeeper
+        if (gotSick) {
+            throw new CatSickException("猫咪因为太脏感染了皮肤病！");
+        }
     }
 
     // 兼容三种格式：
@@ -146,36 +197,13 @@ public final class CatConditionFile {
             // System.out.println("猫咪感染病菌！游戏结束。");
             // System.exit(0);
             // return line;
-            throw new CatDiedException("猫咪感染病菌！游戏结束。");
+            // 这个惩罚太强了，把清洁度归零后的“死刑”改为“病假”
+            // throw new CatDiedException("猫咪感染病菌！游戏结束。");
+            // 清洁度为负 -> 触发皮肤病
+            throw new CatSickException("猫咪因为太脏感染了皮肤病！");
         }
-        return prefix + "#".repeat((int) next);
+        return prefix + " " + "#".repeat((int) next);
     }
-
-    // // —— 辅助：清洁度星号递增 ——
-    // // 根据这一行里当前有多少个 *，+delta，最多不超过 max，返回新的一行
-    // private static String incAster(String oldLine, int delta, int max) {
-    //     // 找到第一段连续的星号，把它当成清洁度条
-    //     int current = (int)oldLine.chars().filter(ch -> ch == '#').count();
-
-    //     int next = current + delta;
-    //     if (next > max) {
-    //         next = max;     // 不超过上限
-    //     }
-    //     if (next < 0) {
-    //         next = 0;       // 理论上用不到，只是防御
-    //     }
-
-    //     // 没变化就直接返回原行（例如已经是满 48 个）
-    //     if (next == current) {
-    //         return oldLine;
-    //     }
-
-    //     String stars = "#".repeat(next);
-
-    //     // 用第一段连续的星号替换成新的星号串
-    //     // "\\*+" 的意思是“至少一个 *”
-    //     return oldLine.replaceFirst("#+", stars);
-    // }
 
         private static String incAster(String oldLine, int delta, int max) {
         int idx = oldLine.indexOf('：');
@@ -285,13 +313,13 @@ public final class CatConditionFile {
             String line = lines.get(i);
 
             if (line.contains("饥饿度")) {
-                line = "饥饿度： ♥♥♥♥♥♥   (6/6)";
+                line = "饥饿度： ♥♥♥♥♥♥";
             } else if (line.contains("口渴度")) {
-                line = "口渴度： ♥♥♥♥   (4/4)";
+                line = "口渴度： ♥♥♥♥";
             } else if (line.contains("亲密度")) {
-                line = "亲密度： (♥♥♥♥)   (4/4)";
+                line = "亲密度： ♥♥♥♥";
             } else if (line.contains("兴奋度")) {
-                line = "兴奋度： (♥♥♥♥)   (4/4)";
+                line = "兴奋度： ♥♥♥♥";
             } else if (line.stripLeading().startsWith("清洁度")) {
                 line = "清洁度： ################################################"; // 给48个的 #
             }
@@ -582,78 +610,6 @@ public final class CatConditionFile {
 
         // Files.write(goodsPath, lines, StandardCharsets.UTF_8);
     }
-    // public static void inc:contentReference[oaicite:3]{index=3}Path, int itemIndex, int delta) throws IOException {
-    //     List<String> lines = Files.readAllLines(goodsPath, StandardCharsets.UTF_8);
-
-    //     int lineIndex = 2 + (itemIndex - 1); // 1=猫粮对应第3行(下标2)
-    //     if (lineIndex < 0 || lineIndex >= lines.size()) {
-    //         throw new IOException("goods_condition.txt 行数不足，找不到物品索引: " + itemIndex);
-    //     }
-
-    //     String line = lines.get(lineIndex);
-
-    //     int starPos = line.indexOf('*');
-    //     if (starPos < 0) {
-    //         throw new IOException("物品行缺少 '*'，无法解析数量: " + line);
-    //     }
-
-    //     int i = starPos + 1;
-    //     while (i < line.length() && Character.isWhitespace(line.charAt(i))) i++; // 跳过空格
-
-    //     int start = i;
-    //     while (i < line.length() && Character.isDigit(line.charAt(i))) i++;      // 读取数字
-
-    //     if (start == i) {
-    //         throw new IOException("'*' 后没有数字，无法解析数量: " + line);
-    //     }
-
-    //     int count = Integer.parseInt(line.substring(start, i));
-    //     int next = count + delta;
-    //     if (next < 0) next = 0;
-
-    //     // 保留数字后面的原始内容（括号说明等）
-    //     String newLine = line.substring(0, start) + next + line.substring(i);
-    //     lines.set(lineIndex, newLine);
-
-    //     Files.write(goodsPath, lines, StandardCharsets.UTF_8);
-    // }
-        //     /** 洗澡：清洁度增加 delta 个 *，最多 maxStars 个 */
-        // public static boolean wash(java.nio.file.Path file, int delta, int maxStars)
-        //         throws java.io.IOException {
-
-        //     java.util.List<String> lines = java.nio.file.Files.readAllLines(
-        //             file,
-        //             java.nio.charset.StandardCharsets.UTF_8
-        //     );
-
-        //     boolean changed = false;
-
-        //     for (int i = 0; i < lines.size(); i++) {
-        //         String line = lines.get(i);
-
-        //         // 找到“清洁度”这一行
-        //         if (line.contains("清洁度")) {
-        //             String newLine = incCleanLine(line, delta, maxStars);
-        //             if (!newLine.equals(line)) {
-        //                 lines.set(i, newLine);
-        //                 changed = true;
-        //             }
-        //             break; // 找到并处理完就可以退出了
-        //         }
-        //     }
-
-        //     if (changed) {
-        //         java.nio.file.Files.write(
-        //                 file,
-        //                 lines,
-        //                 java.nio.charset.StandardCharsets.UTF_8,
-        //                 java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
-        //         );
-        //     }
-
-        //     return changed;
-        // }
-
 
     /** 内部工具：根据当前行，计算 ♥ 数量，+delta（不超过 max），重新生成一行（兴奋度） */
     private static String incExciteLine(String oldLine, int delta, int max) {
@@ -671,7 +627,8 @@ public final class CatConditionFile {
 
         // 这里格式照着 cat_condition.txt 里“兴奋度”那一行来
         // 例如：兴奋度： ♥♥  (2/4)
-        return "兴奋度： " + hearts + "  (" + next + "/" + max + ")";
+        // 去掉末尾的数字进度和多余的括号
+        return "兴奋度： " + hearts;
     }
     // 通用爱抚：亲密度增加 delta（正数），最多 maxHearts
     // @return  true: 亲密度发生了变化；false: 已经满了，没有变化
@@ -693,12 +650,20 @@ public final class CatConditionFile {
                 if (next < 0) next = 0;               // 虽然现在不用减，但防一下
 
                 if (next != current) {
-                    // 重新拼一行：注意格式要跟 cat_condition.txt 一致
+                    // 重新拼一行：去掉后面的 (x/maxHearts) 和包裹爱心的括号
                     String hearts = "♥".repeat(next);
-                    String newLine = "亲密度: " + hearts + "   (" + next + "/" + maxHearts + ")";
+                    String newLine = "亲密度： " + hearts;
                     lines.set(i, newLine);
                     changed = true;
                 }
+//                if (next != current) {
+//                    // 重新拼一行：注意格式要跟 cat_condition.txt 一致
+//                    String hearts = "♥".repeat(next);
+//                    String newLine = "亲密度: " + hearts + "   (" + next + "/" + maxHearts + ")";
+//                    lines.set(i, newLine);
+//                    changed = true;
+//                }
+
                 break;   // 找到了就可以退出循环
             }
         }
@@ -722,6 +687,10 @@ public final class CatConditionFile {
         }
     }
 
+    public static class CatSickException extends RuntimeException {
+        public CatSickException(String message) { super(message); }
+    }
+
     /** 工具：根据当前行，计算 ♥ 数量，+delta（不超过 max），重新生成这一行 */
     private static String incThirstLine(String oldLine, int delta, int max) {
         int current = countHeart(oldLine);
@@ -736,42 +705,8 @@ public final class CatConditionFile {
         String hearts = "♥".repeat(next);
         // 按你 cat_condition.txt 的格式自己调一下：
         // 示例： "口渴度: " + hearts + "    (4/4)"
-        return "口渴度: " + hearts + "    (" + next + "/" + max + ")";
+        return "口渴度: " + hearts;
     }
-
-// public static boolean drink(java.nio.file.Path file, int delta, int maxHearts)
-//         throws java.io.IOException {
-
-//     java.util.List<String> lines = java.nio.file.Files.readAllLines(
-//             file,
-//             java.nio.charset.StandardCharsets.UTF_8
-//     );
-
-//     boolean changed = false;
-
-//     for (int i = 0; i < lines.size(); i++) {
-//         String line = lines.get(i);
-//         if (line.contains("口渴度")) {          // 找到“口渴度”那一行
-//             String newLine = incHeartLine(line, delta, maxHearts);
-//             if (!newLine.equals(line)) {       // 只有真的变了才写回
-//                 lines.set(i, newLine);
-//                 changed = true;
-//             }
-//             break; // 找到后就退出循环
-//         }
-//     }
-
-//     if (changed) {
-//         java.nio.file.Files.write(
-//                 file,
-//                 lines,
-//                 java.nio.charset.StandardCharsets.UTF_8,
-//                 java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
-//         );
-//     }
-
-//     return changed;   // true 表示有变化；false 表示已经满了
-// }
 
     /** 内部工具：根据当前行，计算 ♥ 数量，+delta（不超过 max），重新生成这一行 */
     private static String incHungerLine(String oldLine, int delta, int max) {
@@ -788,7 +723,7 @@ public final class CatConditionFile {
         String hearts = "♥".repeat(next);
 
         // 根据 cat_condition.txt 的格式拼回去
-        return "饥饿度： " + hearts + "   (" + next + "/" + max + ")";
+        return "饥饿度： " + hearts;
     }
     
     /** 根据当前行的 ♥ 数，增加 delta（不超过 max），返回新的行。如果没变化就返回原行 */
@@ -945,6 +880,26 @@ public final class CatConditionFile {
         Files.write(file, lines, StandardCharsets.UTF_8);
     }
 
+    // 增加天使猫数量
+    public static void incAngelCount(Path file) throws IOException {
+        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+
+        for (int i = 0; i < lines.size(); i++) {
+            String s = lines.get(i).trim();
+            if (s.startsWith("天使：") || s.startsWith("天使:")) {
+                int idx = s.indexOf('：');
+                if (idx < 0) idx = s.indexOf(':');
+                if (idx >= 0) {
+                    int n = Integer.parseInt(s.substring(idx + 1).trim());
+                    lines.set(i, "天使：" + (n + 1)); // 数量 + 1
+                    break;
+                }
+            }
+        }
+
+        Files.write(file, lines, StandardCharsets.UTF_8);
+    }
+
     // 读取当前天使数量
     public static int getAngelCount(Path file) throws IOException {
         List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
@@ -967,145 +922,4 @@ public final class CatConditionFile {
     public static boolean hasAngel(Path file) throws IOException {
         return getAngelCount(file) > 0;
     }
-
-    /** 通用喝水：口渴度增加 delta（正数），最多 maxHearts
-    *  @return 真：口渴度发生了变化；假：已经满了，没有变化
-    */
-    // public static boolean drink(java.nio.file.Path file, int delta, int maxHearts)
-    //     throws java.io.IOException {
-
-    //     java.util.List<String> lines = java.nio.file.Files.readAllLines(
-    //         file,
-    //         java.nio.charset.StandardCharsets.UTF_8
-    //     );
-
-    //     boolean changed = false;
-
-    //     for (int i = 0; i < lines.size(); i++) {
-    //         String line = lines.get(i);
-    //         if (line.contains("口渴度")) {
-    //             String newLine = incHungerLine(line, delta, maxHearts); // 重用 incHungerLine 逻辑
-    //             if (!newLine.equals(line)) {
-    //                 lines.set(i, newLine);
-    //                 changed = true;
-    //             }
-    //             break;
-    //         }
-    //     }
-
-    //     if (changed) {
-    //         java.nio.file.Files.write(
-    //             file,
-    //             lines,
-    //             java.nio.charset.StandardCharsets.UTF_8,
-    //             java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
-    //         );
-    //     }
-
-    //     return changed;
-    // }
-
 }
-
-
-//     /** 内部工具：根据当前行，计算 ♥ 数量，+delta（不超过 max），重新生成这一行 */
-//     private static String incHungerLine(String oldLine, int delta, int max) {
-//         // 这里用的就是你类里已经有的那个 countHeart(String s) 方法
-//         int current = countHeart(oldLine);
-//         int next = current + delta;
-//         if (next > max) next = max;
-//         if (next < 0) next = 0; // 以防以后想写扣饥饿度
-
-//         // 如果没有变化就直接返回原行
-//         if (next == current) {
-//             return oldLine;
-//         }
-
-//         String hearts = "♥".repeat(next);
-
-//         // 这里直接拼一个你想要的格式，
-//         // 根据你 cat_condition.txt 的实际情况可以微调
-//         // 比如你那边是全角括号，可以把 (6/6) 换成 （6/6）
-//         return "饥饿度： " + hearts + "   (" + next + "/" + max + ")";
-//     }
-
-//     /** 使用一次指定物品：name 为行里出现的名字，比如 "猫粮"、"超级猫粮"。
-//  *  数量 > 0 时减 1，减到 0 为止。
-//  *  @return 是否成功使用（数量大于 0）
-//  */
-// public static boolean useItem(java.nio.file.Path goodsFile, String name)
-//         throws java.io.IOException {
-
-//     java.util.List<String> lines = java.nio.file.Files.readAllLines(
-//             goodsFile,
-//             java.nio.charset.StandardCharsets.UTF_8
-//     );
-
-//     boolean changed = false;
-
-//     for (int i = 0; i < lines.size(); i++) {
-//         String line = lines.get(i);
-
-//         // 跳过标题行
-//         if (i == 0) continue;
-
-//         if (line.contains(name)) {
-//             String newLine = decItemCount(line);
-//             if (!newLine.equals(line)) {
-//                 changed = true;      // 数量真的 -1 了
-//                 lines.set(i, newLine);
-//             }
-//             break;
-//         }
-//     }
-
-//     if (changed) {
-//         java.nio.file.Files.write(
-//                 goodsFile,
-//                 lines,
-//                 java.nio.charset.StandardCharsets.UTF_8,
-//                 java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
-//         );
-//     }
-
-//     return changed;
-// }
-
-// /** 把像“猫粮 * 7 （恢复一点饥饿值）”这种行里的数字减 1，最少到 0 */
-// private static String decItemCount(String line) {
-//     // 找到 '*' 后面的数字
-//     int starIndex = line.indexOf('*');
-//     if (starIndex < 0) return line;
-
-//     // 从 '*' 后面开始向后读数字
-//     int i = starIndex + 1;
-//     while (i < line.length() && line.charAt(i) == ' ') {
-//         i++;
-//     }
-
-//     int startNum = i;
-//     while (i < line.length() && Character.isDigit(line.charAt(i))) {
-//         i++;
-//     }
-//     int endNum = i;
-
-//     if (startNum >= endNum) return line; // 没找到数字
-
-//     String numStr = line.substring(startNum, endNum);
-//     int value;
-//     try {
-//         value = Integer.parseInt(numStr);
-//     } catch (NumberFormatException e) {
-//         return line;
-//     }
-
-//     if (value <= 0) {
-//         // 已经是 0，就不再减
-//         return line;
-//     }
-//     int next = value - 1;
-
-//     // 把原来的数字替换成新数字
-//     String newNumStr = String.valueOf(next);
-//     return line.substring(0, startNum) + newNumStr + line.substring(endNum);
-//  }

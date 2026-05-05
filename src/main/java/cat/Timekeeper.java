@@ -42,8 +42,21 @@ public final class Timekeeper {
         int steps = (int) (diff / THREE_HOURS_MS);
         if (steps <= 0) return 0;
 
+        // --- 方案 B 落地：如果猫砂盆满了且时间流逝，则触发病变 ---
+        if (state.poopCount >= 4) {
+            state.isSick = true;
+        }
+
+        // 修改 cat_condition.txt
+        try {
+            CatConditionFile.degrade(catConditionPath, steps);
+        } catch (CatConditionFile.CatSickException e) {
+            // --- 方案 A 补丁：捕获到清洁度归零的信号，标记生病 ---
+            state.isSick = true;
+        }
+
         // 修改 cat_condition.txt（内部负责把 ♥ 和 * 递减并同步数值）
-        CatConditionFile.degrade(catConditionPath, steps);
+        // CatConditionFile.degrade(catConditionPath, steps);
 
         // 推进已消费掉的时间，并落盘
         state.lastTs += steps * THREE_HOURS_MS;

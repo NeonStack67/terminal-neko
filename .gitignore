@@ -7,4 +7,7 @@
 out/
 src/main/out/
 chinese-xinhua-master.zip
-chinese-xinhua-master/
+chinese-xinhua-master/.idea/
+*.iml
+src/main/data/
+resources/
