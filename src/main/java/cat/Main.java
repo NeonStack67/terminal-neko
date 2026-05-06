@@ -32,6 +32,28 @@ public class Main {
         Path goodsPath = dataDir.resolve("goods_condition.txt");
         Path idiomPath = dataDir.resolve("idiom.txt");
 
+        // ================== 新增：初次运行自动生成数据文件 ==================
+        // 确保 data 文件夹存在 (只需执行一次)
+        if (!Files.exists(dataDir)) {
+            Files.createDirectories(dataDir);
+        }
+
+        if (!Files.exists(condPath)) {
+            Files.copy(resourceDir.resolve("cat_condition.txt"), condPath);
+            System.out.println("📝 已自动生成初始宠物状态文件。");
+        }
+
+        if (!Files.exists(goodsPath)) {
+            Files.copy(resourceDir.resolve("goods_condition.txt"), goodsPath);
+            System.out.println("📦 已自动生成初始物品清单文件。");
+        }
+
+        if (!Files.exists(idiomPath)) {
+            Files.copy(resourceDir.resolve("idiom.txt"), idiomPath);
+            System.out.println("📚 已自动生成成语词库文件。");
+        }
+        // ===============================================================
+
         // 先用这一种
         Path savePath = getSavePath();
         // 或者开发期临时用：Path savePath = dataDir.resolve("save.properties");
@@ -819,7 +841,7 @@ public class Main {
 
         // 2. 从 src/main/resources 拷贝初始猫状态到 data
         Path template = Paths.get(System.getProperty("user.dir"))
-                .resolve("../resources/cat_condition.txt")
+                .resolve("src/main/resources/cat_condition.txt")
                 .normalize();
 
         if (!Files.exists(template)) {

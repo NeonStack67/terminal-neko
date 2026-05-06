@@ -11,3 +11,5 @@ chinese-xinhua-master/.idea/
 *.iml
 src/main/data/
 resources/
+.idea/
+chinese-xinhua-master/
