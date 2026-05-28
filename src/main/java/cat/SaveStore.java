@@ -29,6 +29,10 @@ public final class SaveStore {
 
         // ===== 新增：健康状态 =====
         public boolean isSick;
+
+        // ===== 新增：库洛米隐藏日志彩蛋 =====
+        public boolean kuromiEggUnlocked;   // 是否已经第一次触发过
+        public String lastKuromiEggDate;    // 上次触发日期，防止一天触发多次
     }
 
     private final Path file;
@@ -65,6 +69,12 @@ public final class SaveStore {
             String sick = p.getProperty("isSick");
             s.isSick = (sick != null) && Boolean.parseBoolean(sick);
 
+            String kuromi = p.getProperty("kuromiEggUnlocked");
+            s.kuromiEggUnlocked = (kuromi != null) && Boolean.parseBoolean(kuromi);
+
+            String ked = p.getProperty("lastKuromiEggDate");
+            s.lastKuromiEggDate = (ked == null || ked.isBlank()) ? "" : ked;
+
             s.catName = (cn == null || cn.isBlank()) ? "" : cn;
             s.trainTickets = (tt != null) ? Integer.parseInt(tt) : 0;
             s.lastFishDay = (lf != null) ? Integer.parseInt(lf) : -1;
@@ -93,6 +103,9 @@ public final class SaveStore {
             // ===== 新增初始化名字 =====
             s.catName = "";
             s.poopCount = 0; // ===== 新建存档默认为 0 =====
+            // 彩蛋
+            s.kuromiEggUnlocked = false;
+            s.lastKuromiEggDate = "";
 
             write(s); // 初始化写入
         }
@@ -115,6 +128,13 @@ public final class SaveStore {
 
         // ===== 新增保存 isSick =====
         p.setProperty("isSick", Boolean.toString(s.isSick));
+
+        // 彩蛋的判断
+        p.setProperty("kuromiEggUnlocked", Boolean.toString(s.kuromiEggUnlocked));
+
+        if (s.lastKuromiEggDate != null) {
+            p.setProperty("lastKuromiEggDate", s.lastKuromiEggDate);
+        }
 
         p.setProperty("dayCount", Integer.toString(s.dayCount));
         p.setProperty("lastTs", Long.toString(s.lastTs));

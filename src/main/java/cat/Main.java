@@ -10,6 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
     // 作弊模式总开关：true = 开启开发者 / 作弊模式
@@ -17,6 +19,354 @@ public class Main {
     private static final boolean GOD_MODE = true; // 上帝模式：猫咪不会死，状态自动恢复（不消耗天使猫），方便测试不死之身功能
     // 想关掉作弊的时候只要改成 false 就行
     // 在 Main 类里新加这个方法（在 main(...) 下面就行）
+
+    private enum Lang {
+        ZH, EN
+    }
+
+    private static Lang currentLang = Lang.ZH;
+
+    private static final Map<String, String> ZH = new HashMap<>();
+    private static final Map<String, String> EN = new HashMap<>();
+
+    static {
+        // ===== 主界面 =====
+        ZH.put("welcome.title", "                  欢迎光临宠物商店                   ");
+        EN.put("welcome.title", "                  Welcome to Pet World               ");
+
+        ZH.put("welcome.line1", "  这是一家只卖“文字的小猫”的小店。");
+        EN.put("welcome.line1", "  This is a small shop that sells only “text kittens”.");
+
+        ZH.put("welcome.line2", "  在这里，你可以领养、抚摸、喂食、清洁、陪玩，");
+        EN.put("welcome.line2", "  Here, you can adopt, pet, feed, clean, and play with your kitten.");
+
+        ZH.put("welcome.line3", "  用每日几分钟，养大一只可爱的小猫。");
+        EN.put("welcome.line3", "  Spend a few minutes each day and raise a lovely little cat.");
+
+        ZH.put("help.tip", "  输入h 帮助/说明");
+        EN.put("help.tip", "  Type h for help/instructions");
+
+        ZH.put("lang.tip", "  输入l 切换语言 / language");
+        EN.put("lang.tip", "  Type l to switch language / 切换语言");
+
+        ZH.put("exit.tip", "  输入exit 退出");
+        EN.put("exit.tip", "  Type exit to quit");
+
+        ZH.put("save.path", "存档路径: ");
+        EN.put("save.path", "Save path: ");
+
+        ZH.put("input.option", "  请输入选项编号：");
+        EN.put("input.option", "  Please enter an option: ");
+
+        ZH.put("invalid.input", "无效输入，请重新输入。");
+        EN.put("invalid.input", "Invalid input. Please try again.");
+
+        ZH.put("quit", "退出程序");
+        EN.put("quit", "Quit game");
+
+        // ===== 语言菜单 =====
+        ZH.put("lang.menu.title", "===== 语言设置 =====");
+        EN.put("lang.menu.title", "===== Language Settings =====");
+
+        ZH.put("lang.menu.1", "1. 中文");
+        EN.put("lang.menu.1", "1. Chinese");
+
+        ZH.put("lang.menu.2", "2. English");
+        EN.put("lang.menu.2", "2. English");
+
+        ZH.put("lang.choose", "请选择语言：");
+        EN.put("lang.choose", "Choose language: ");
+
+        ZH.put("lang.changed.zh", "语言已切换为中文。");
+        EN.put("lang.changed.zh", "Language switched to Chinese.");
+
+        ZH.put("lang.changed.en", "语言已切换为英文。");
+        EN.put("lang.changed.en", "Language switched to English.");
+
+        ZH.put("lang.invalid", "语言选项无效。");
+        EN.put("lang.invalid", "Invalid language option.");
+
+        // ===== 动作菜单 =====
+        ZH.put("action.enter", "你进入了动作处理菜单");
+        EN.put("action.enter", "You entered the action menu.");
+
+        ZH.put("action.1", "1. 喂猫粮");
+        EN.put("action.1", "1. Feed cat food");
+
+        ZH.put("action.2", "2. 喂超级猫粮");
+        EN.put("action.2", "2. Feed super cat food");
+
+        ZH.put("action.3", "3. 喂牛奶");
+        EN.put("action.3", "3. Feed milk");
+
+        ZH.put("action.4", "4. 喂鱼");
+        EN.put("action.4", "4. Feed fish");
+
+        ZH.put("action.5", "5. 喂水");
+        EN.put("action.5", "5. Give water");
+
+        ZH.put("action.6", "6. 爱抚");
+        EN.put("action.6", "6. Pet");
+
+        ZH.put("action.7", "7. 玩耍");
+        EN.put("action.7", "7. Play");
+
+        ZH.put("action.8", "8. 洗澡");
+        EN.put("action.8", "8. Bathe");
+
+        ZH.put("action.9", "9. 训练");
+        EN.put("action.9", "9. Train");
+
+        ZH.put("action.10", "10. 打扫");
+        EN.put("action.10", "10. Clean");
+
+        ZH.put("action.11", "11. 治病");
+        EN.put("action.11", "11. Treat illness");
+
+        ZH.put("action.12", "12. 挣钱");
+        EN.put("action.12", "12. Work for money");
+
+        ZH.put("action.13", "13. 购物");
+        EN.put("action.13", "13. Shopping");
+
+        ZH.put("action.0", "0. 返回主菜单");
+        EN.put("action.0", "0. Return to main menu");
+
+        ZH.put("action.choose", "请选择动作编号：");
+        EN.put("action.choose", "Choose an action: ");
+
+        ZH.put("action.invalid", "无效的动作编号。");
+        EN.put("action.invalid", "Invalid action number.");
+
+        ZH.put("back.main", "返回主菜单。");
+        EN.put("back.main", "Returned to main menu.");
+
+        // ===== 常用反馈 =====
+        ZH.put("food.empty", "你的猫粮已经用完了，先去商店补货吧。");
+        EN.put("food.empty", "You have run out of cat food. Go to the shop first.");
+
+        ZH.put("feed.catfood.ok", "你给猫喂了一份猫粮，饥饿度 +1。");
+        EN.put("feed.catfood.ok", "You fed the cat some cat food. Hunger +1.");
+
+        ZH.put("cat.full", "猫已经吃得很饱了，饥饿度没有再增加。");
+        EN.put("cat.full", "The cat is already full. Hunger did not increase.");
+
+        ZH.put("water.ok", "你给猫喝了一点水，口渴度 +1。");
+        EN.put("water.ok", "You gave the cat some water. Thirst +1.");
+
+        ZH.put("water.full", "猫已经不渴了，口渴度没有再增加。");
+        EN.put("water.full", "The cat is no longer thirsty. Thirst did not increase.");
+
+        // ===== Startup / naming =====
+        ZH.put("file.init.cat", "📝 已自动生成初始宠物状态文件。");
+        EN.put("file.init.cat", "📝 Initial pet status file has been created.");
+
+        ZH.put("file.init.goods", "📦 已自动生成初始物品清单文件。");
+        EN.put("file.init.goods", "📦 Initial item inventory file has been created.");
+
+        ZH.put("file.init.idiom", "📚 已自动生成成语词库文件。");
+        EN.put("file.init.idiom", "📚 Initial idiom word bank has been created.");
+
+        ZH.put("name.first.cat", "🐾 看来这是一只刚来到宠物商店的小猫。");
+        EN.put("name.first.cat", "🐾 It looks like this kitten has just arrived at the pet shop.");
+
+        ZH.put("name.ask", "请给你的小猫起个专属的名字吧：");
+        EN.put("name.ask", "Please give your kitten a special name: ");
+
+        ZH.put("name.default", "小异端");
+        EN.put("name.default", "Little Heretic");
+
+        ZH.put("name.success.prefix", "起名成功！以后它就叫「");
+        EN.put("name.success.prefix", "Name set! From now on, this kitten is called \"");
+
+        ZH.put("name.success.suffix", "」啦！");
+        EN.put("name.success.suffix", "\"!");
+
+// ===== Day / ascension =====
+        ZH.put("day.today.prefix", "今天是你和猫咪在一起的第 ");
+        EN.put("day.today.prefix", "Today is day ");
+
+        ZH.put("day.today.suffix", " 天。");
+        EN.put("day.today.suffix", " with your kitten.");
+
+        ZH.put("ascend.achievement", "✨ 达成阶段性成就：【满月飞升】！");
+        EN.put("ascend.achievement", "✨ Milestone achieved: Full-Moon Ascension!");
+
+        ZH.put("ascend.message", "你的猫咪已养育满 30 天，功德圆满，现已升入天堂修行。");
+        EN.put("ascend.message", "You have raised your kitten for 30 days. Its journey is complete, and it has ascended to heaven for training.");
+
+        ZH.put("ascend.reward", "（作为飞升的嘉奖，你立刻获得了 1 只天使猫！）");
+        EN.put("ascend.reward", "(As a reward for ascension, you immediately received 1 Angel Cat!)");
+
+        ZH.put("ascend.notice", "它会在天堂注视着你，你可以连续 7 天张贴“寻猫启示”唤它回家。");
+        EN.put("ascend.notice", "It will watch over you from heaven. You can post Missing Cat Notices for 7 days in a row to call it home.");
+
+// ===== Death / angel / re-adopt =====
+        ZH.put("god.achievement", "达成成就：代码之子，不死之身");
+        EN.put("god.achievement", "Achievement unlocked: Child of Code, Immortal Body");
+
+        ZH.put("death.beyond", "达成成就：超越生死");
+        EN.put("death.beyond", "Achievement unlocked: Beyond Life and Death");
+
+        ZH.put("angel.auto", "天使猫自动发动！已阻止死亡并恢复所有状态。");
+        EN.put("angel.auto", "The Angel Cat activated automatically! Death was prevented and all stats were restored.");
+
+        ZH.put("readopt.ask", "要重新领养一只新猫吗？(y/N)：");
+        EN.put("readopt.ask", "Would you like to adopt a new kitten? (y/N): ");
+
+        ZH.put("readopt.success", "你重新领养了一只新的小猫。");
+        EN.put("readopt.success", "You adopted a new kitten.");
+
+        ZH.put("readopt.name.ask", "请给新来的小猫起个名字吧：");
+        EN.put("readopt.name.ask", "Please give the new kitten a name: ");
+
+        ZH.put("program.exit", "已退出程序。");
+        EN.put("program.exit", "Game exited.");
+
+        ZH.put("program.quit", "退出程序");
+        EN.put("program.quit", "Quit game");
+
+        // ===== Help =====
+        ZH.put("help.path", "帮助文件路径: ");
+        EN.put("help.path", "Help file path: ");
+
+        ZH.put("help.read.fail", "无法读取帮助文件: ");
+        EN.put("help.read.fail", "Unable to read help file: ");
+
+        // ===== Status Menu =====
+        ZH.put("status.enter", "你进入状态显示菜单，可查看宠物状态和物品状态。");
+        EN.put("status.enter", "You entered the status menu. You can view the pet status and item inventory.");
+
+        ZH.put("status.pet.title", "===== 宠物状态 =====");
+        EN.put("status.pet.title", "===== Pet Status =====");
+
+        ZH.put("status.goods.title", "===== 物品栏 =====");
+        EN.put("status.goods.title", "===== Inventory =====");
+
+        ZH.put("status.health.ok", "健康状况：🟢 健康");
+        EN.put("status.health.ok", "Health: 🟢 Healthy");
+
+        ZH.put("status.health.sick", "健康状况：🔴 生病中（需要治疗）");
+        EN.put("status.health.sick", "Health: 🔴 Sick (treatment needed)");
+
+        ZH.put("status.pet.notice", "♡ 请注意，电子小猫需要定期喂食和饮水，以保持其健康和快乐。");
+        EN.put("status.pet.notice", "♡ Please remember: your digital kitten needs regular food and water to stay healthy and happy.");
+
+        ZH.put("status.prompt", "请输入选项：");
+        EN.put("status.prompt", "Please enter an option: ");
+
+        ZH.put("ascend.block.1", "猫咪仍在天堂修行中。");
+        EN.put("ascend.block.1", "Your kitten is still training in heaven.");
+
+        ZH.put("ascend.block.2", "请继续张贴寻猫启事，直到它回家。");
+        EN.put("ascend.block.2", "Keep posting Missing Cat Notices until it comes home.");
+
+        ZH.put("notice.posted.prefix", "你已经张贴了第 ");
+        EN.put("notice.posted.prefix", "You have posted Missing Cat Notice day ");
+
+        ZH.put("notice.posted.suffix", " 天的寻猫启事。");
+        EN.put("notice.posted.suffix", ".");
+
+        ZH.put("notice.return", "猫咪听见了你的呼唤，回到了人间。");
+        EN.put("notice.return", "Your kitten heard your call and returned home.");
+
+        ZH.put("notice.reward", "它带回了一只天使猫作为礼物。");
+        EN.put("notice.reward", "It brought back 1 Angel Cat as a gift.");
+
+        ZH.put("notice.remaining.prefix", "还需要再张贴 ");
+        EN.put("notice.remaining.prefix", "You need to post ");
+
+        ZH.put("notice.remaining.suffix", " 天寻猫启事。");
+        EN.put("notice.remaining.suffix", " more day(s) of Missing Cat Notices.");
+
+        ZH.put("angel.restore", "天使猫发动了力量，猫咪的状态已全部恢复。");
+        EN.put("angel.restore", "The Angel Cat activated automatically! All stats were restored.");
+
+        ZH.put("angel.none", "没有天使猫守护，猫咪无法恢复。");
+        EN.put("angel.none", "No Angel Cat is available. Your kitten cannot be restored.");
+
+        ZH.put("angel.restore.fail", "天使猫恢复失败：");
+        EN.put("angel.restore.fail", "Angel Cat restore failed: ");
+    }
+
+    private static String t(String key) {
+        Map<String, String> dict = (currentLang == Lang.EN) ? EN : ZH;
+        return dict.getOrDefault(key, key);
+    }
+//双语
+//    private static final boolean BILINGUAL_MODE = true;
+//
+//    private static String bi(String zh, String en) {
+//        if (!BILINGUAL_MODE) {
+//            return currentLang == Lang.EN ? en : zh;
+//        }
+//
+//        if (currentLang == Lang.EN) {
+//            return en + "\n" + zh;
+//        } else {
+//            return zh + "\n" + en;
+//        }
+//    }
+//
+//    private static void say(String zh, String en) {
+//        System.out.println(bi(zh, en));
+//    }
+//
+//    private static void ask(String zh, String en) {
+//        System.out.print(bi(zh, en));
+//    }
+
+    private static void loadLanguage(Path savePath) {
+        Path langPath = savePath.getParent().resolve("language.txt");
+
+        try {
+            if (!Files.exists(langPath)) {
+                currentLang = Lang.ZH;
+                Files.writeString(langPath, "zh", StandardCharsets.UTF_8);
+                return;
+            }
+
+            String value = Files.readString(langPath, StandardCharsets.UTF_8).trim();
+            currentLang = value.equalsIgnoreCase("en") ? Lang.EN : Lang.ZH;
+        } catch (IOException e) {
+            currentLang = Lang.ZH;
+        }
+    }
+
+    private static void saveLanguage(Path savePath) {
+        Path langPath = savePath.getParent().resolve("language.txt");
+
+        try {
+            Files.writeString(
+                    langPath,
+                    currentLang == Lang.EN ? "en" : "zh",
+                    StandardCharsets.UTF_8
+            );
+        } catch (IOException e) {
+            System.out.println(t("lang.save.fail") + e.getMessage());
+        }
+    }
+
+    private static void showLanguageMenu(Scanner in, Path savePath) {
+        System.out.println(t("lang.menu.title"));
+        System.out.println(t("lang.menu.1"));
+        System.out.println(t("lang.menu.2"));
+        System.out.print(t("lang.choose"));
+
+        String choice = in.nextLine().trim();
+
+        if (choice.equals("1") || choice.equalsIgnoreCase("zh") || choice.equalsIgnoreCase("chinese")) {
+            currentLang = Lang.ZH;
+            saveLanguage(savePath);
+            System.out.println(t("lang.changed.zh"));
+        } else if (choice.equals("2") || choice.equalsIgnoreCase("en") || choice.equalsIgnoreCase("english")) {
+            currentLang = Lang.EN;
+            saveLanguage(savePath);
+            System.out.println(t("lang.changed.en"));
+        } else {
+            System.out.println(t("lang.invalid"));
+        }
+    }
 
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
@@ -32,6 +382,10 @@ public class Main {
         Path goodsPath = dataDir.resolve("goods_condition.txt");
         Path idiomPath = dataDir.resolve("idiom.txt");
 
+        // 先加载语言设置，确保初次运行提示也能按当前语言输出
+        Path savePath = getSavePath();
+        loadLanguage(savePath);
+
         // ================== 新增：初次运行自动生成数据文件 ==================
         // 确保 data 文件夹存在 (只需执行一次)
         if (!Files.exists(dataDir)) {
@@ -40,28 +394,28 @@ public class Main {
 
         if (!Files.exists(condPath)) {
             Files.copy(resourceDir.resolve("cat_condition.txt"), condPath);
-            System.out.println("📝 已自动生成初始宠物状态文件。");
+            System.out.println(t("file.init.cat"));
         }
 
         if (!Files.exists(goodsPath)) {
             Files.copy(resourceDir.resolve("goods_condition.txt"), goodsPath);
-            System.out.println("📦 已自动生成初始物品清单文件。");
+            System.out.println(t("file.init.goods"));
         }
 
         if (!Files.exists(idiomPath)) {
             Files.copy(resourceDir.resolve("idiom.txt"), idiomPath);
-            System.out.println("📚 已自动生成成语词库文件。");
+            System.out.println(t("file.init.idiom"));
         }
         // ===============================================================
 
-        // 先用这一种
-        Path savePath = getSavePath();
         // 或者开发期临时用：Path savePath = dataDir.resolve("save.properties");
 
         var saveStore = new SaveStore(savePath);
         // var goodsPath = dataDir.resolve("goods_condition.txt");
 
         SaveStore.SaveState state = saveStore.read(); // 读取游戏进度
+        // 彩蛋是否展示
+        maybeShowKuromiEgg(saveStore, state);
         // Timekeeper timekeeper = new Timekeeper();
 
         // int days = timekeeper.syncDays(saveStore, state);
@@ -69,14 +423,14 @@ public class Main {
 
         // ===== 新增：起名指引 =====
         if (state.catName == null || state.catName.isEmpty()) {
-            System.out.println("🐾 看来这是一只刚来到宠物商店的小猫。");
-            System.out.print("请给你的小猫起个专属的名字吧：");
+            System.out.println(t("name.first.cat"));
+            System.out.print(t("name.ask"));
             state.catName = in.nextLine().trim();
             if (state.catName.isEmpty()) {
-                state.catName = "小异端"; // 玩家直接敲回车的话，给个默认硬核名字
+                state.catName = t("name.default"); // 玩家直接敲回车的话，给个默认硬核名字
             }
             saveStore.write(state);
-            System.out.println("起名成功！以后它就叫「" + state.catName + "」啦！\n");
+            System.out.println(t("name.success.prefix") + state.catName + t("name.success.suffix") + "\n");
         }
         // ==========================
 
@@ -88,23 +442,23 @@ public class Main {
         if (state.dayCount >= 30 && !state.isAscended) {
             state.isAscended = true; // 进入修行状态
             saveStore.write(state);
-            System.out.println("✨ 达成阶段性成就：【满月飞升】！");
-            System.out.println("你的猫咪已养育满 30 天，功德圆满，现已升入天堂修行。");
+            System.out.println(t("ascend.achievement"));
+            System.out.println(t("ascend.message"));
 
             // ===== 补上缺失的这行代码，发放飞升奖励 =====
             CatConditionFile.incAngelCount(condPath);
-            System.out.println("（作为飞升的嘉奖，你立刻获得了 1 只天使猫！）");
+            System.out.println(t("ascend.reward"));
             // ==========================================
 
-            System.out.println("它会在天堂注视着你，你可以连续 7 天张贴“寻猫启示”唤它回家。");
+            System.out.println(t("ascend.notice"));
         }
 
         // int steps = Timekeeper.decayBy3Hours(saveStore, state, condPath);
-        // if (steps > 0) System.out.println("已按 3 小时衰减了 " + steps + " 次");
+        // if (steps > 0) System.out.println(t("decay.prefix") + steps + t("decay.suffix"));
     try {
         int steps = Timekeeper.decayBy3Hours(saveStore, state, condPath);
         if (steps > 0) {
-            System.out.println("已按 3 小时衰减了 " + steps + " 次");
+            System.out.println(t("decay.prefix") + steps + t("decay.suffix"));
         }
     } catch (CatConditionFile.CatDiedException e) {
         try {
@@ -121,27 +475,27 @@ public class Main {
                 saveStore.write(state);
 
                 if (GOD_MODE) {
-                    System.out.println("达成成就：代码之子，不死之身");
+                    System.out.println(t("god.achievement"));
                 }
                 if (!GOD_MODE) {
-                    System.out.println("达成成就：超越生死");
+                    System.out.println(t("death.beyond"));
                 }
-                System.out.println("天使猫自动发动！已阻止死亡并恢复所有状态。");
+                System.out.println(t("angel.auto"));
             } else {
                 System.out.println(e.getMessage());
-                System.out.print("要重新领养一只新猫吗？(y/N)：");
+                System.out.print(t("readopt.ask"));
                 String ans = in.nextLine().trim();
 
                 if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
                     resetForReAdopt(savePath, condPath);
                     state = saveStore.read();
-                    System.out.println("你重新领养了一只新的小猫。");
+                    System.out.println(t("readopt.success"));
 
                     // ===== 新增：重新领养后立刻起名 =====
-                    System.out.print("请给新来的小猫起个名字吧：");
+                    System.out.print(t("readopt.name.ask"));
                     state.catName = in.nextLine().trim();
                     if (state.catName.isEmpty()) {
-                        state.catName = "小异端";
+                        state.catName = t("name.default");
                     }
                     saveStore.write(state);
                     // ==================================
@@ -151,45 +505,60 @@ public class Main {
                     // ==========================
 
                 } else {
-                    System.out.println("已退出程序。");
+                    System.out.println(t("program.exit"));
                     return;
                 }
             }
         } catch (IOException ex) {
-            System.out.println("天使猫/重置处理失败：" + ex.getMessage());
+            System.out.println(t("angel.reset.fail") + ex.getMessage());
             return;
         }
 
     }
 
-        System.out.println("今天是你和猫咪在一起的第 " + (state.dayCount + 1) + " 天。");
+        System.out.println(t("day.today.prefix") + (state.dayCount + 1) + t("day.today.suffix"));
 
         CatConditionFile.writeDay(condPath, state.dayCount);
 
 
             System.out.println("**************************************************");
-            System.out.println("                  欢迎光临宠物商店                   ");
+            //System.out.println("                  欢迎光临宠物商店                   ");
+            System.out.println(t("welcome.title"));
             System.out.println("**************************************************");
-            System.out.println("  这是一家只卖“文字的小猫”的小店。");
-            System.out.println("  在这里，你可以领养、抚摸、喂食、清洁、陪玩，");
-            System.out.println("  用每日几分钟，养大一只可爱的小猫。");
+            System.out.println(t("welcome.line1"));
+            System.out.println(t("welcome.line2"));
+            System.out.println(t("welcome.line3"));
             System.out.println();
-            System.out.println("  输入h 帮助/说明");
-            System.out.println("  输入exit 退出");
-            System.out.println("存档路径: " + savePath.toAbsolutePath());
+            System.out.println(t("help.tip"));
+            System.out.println(t("lang.tip"));
+            System.out.println(t("exit.tip"));
+            System.out.println(t("save.path") + savePath.toAbsolutePath());
+//            System.out.println("  这是一家只卖“文字的小猫”的小店。");
+//            System.out.println("  在这里，你可以领养、抚摸、喂食、清洁、陪玩，");
+//            System.out.println("  用每日几分钟，养大一只可爱的小猫。");
+//            System.out.println();
+//            System.out.println("  输入h 帮助/说明");
+//            System.out.println("  输入exit 退出");
+//            System.out.println("存档路径: " + savePath.toAbsolutePath());
 
         while (true) {
         try {
-            System.out.print("  请输入选项编号：");
+            //System.out.print("  请输入选项编号：");
+            System.out.print(t("input.option"));
             String x = in.nextLine();
             if (x.equalsIgnoreCase("die")) {
-                throw new CatConditionFile.CatDiedException("【调试模式】猫咪立即死亡。");
+                throw new CatConditionFile.CatDiedException(t("debug.cat.die"));
             }
-            if (x.equalsIgnoreCase("h")) {
+            if (x.equalsIgnoreCase("l") || x.equalsIgnoreCase("lang") || x.equalsIgnoreCase("language")) {
+                showLanguageMenu(in, savePath);
+            }
+            else if (x.equalsIgnoreCase("h")) {
+                String helpFileName = (currentLang == Lang.EN) ? "how_to_play_en.txt" : "how_to_play.txt";
                 Path helpPath = Paths.get(System.getProperty("user.dir"))
-                .resolve("src/main/resources/how_to_play.txt")
+                .resolve("src/main/resources")
+                .resolve(helpFileName)
                 .normalize();
-                System.out.println("帮助文件路径: " + helpPath);
+                System.out.println(t("help.path") + helpPath);
 
                 try (BufferedReader br = Files.newBufferedReader(helpPath, StandardCharsets.UTF_8)) {
                     String line;
@@ -197,38 +566,94 @@ public class Main {
                         System.out.println(line);
                     }
                 } catch (IOException e) {
-                    System.out.println("无法读取帮助文件: " + e.getMessage());
+                    System.out.println(t("help.read.fail") + e.getMessage());
                 }
             } 
             else if (x.equalsIgnoreCase("exit")) {
-                System.out.println("退出程序");
+                System.out.println(t("program.quit"));
                 break;
-            } else if (x.equalsIgnoreCase("z")) {
+            }
+
+            else if (GOD_MODE && x.equalsIgnoreCase("debug_heaven_return")) {
+                state.isAscended = false;
+                state.postNoticeDays = 0;
+                state.dayCount = 0;
+                saveStore.write(state);
+
+                CatConditionFile.incAngelCount(condPath);
+                CatConditionFile.restoreAll(condPath);
+
+                System.out.println(t("notice.return"));
+                System.out.println(t("notice.reward"));
+                continue;
+            }
+
+            else if (x.equalsIgnoreCase("z")) {
 
                 // ================== 新增：修行拦截 ==================
                 if (state.isAscended) {
-                    System.out.println("🚫 此时猫咪正在天堂修行，你的呼唤它暂时听不见。");
-                    System.out.println("请通过主菜单的 V 键张贴启事。");
+                    System.out.println(t("ascend.block.1"));
+                    System.out.println(t("ascend.block.2"));
                     continue; // 直接跳回主循环开头，不显示下面的动作菜单
                 }
                 // ====================================================
 
-                System.out.println("你进入了动作处理菜单");
-                System.out.println("1. 喂猫粮");
-                System.out.println("2. 喂超级猫粮");
-                System.out.println("3. 喂牛奶");
-                System.out.println("4. 喂鱼");
-                System.out.println("5. 喂水");
-                System.out.println("6. 爱抚");
-                System.out.println("7. 玩耍");
-                System.out.println("8. 洗澡");
-                System.out.println("9. 训练");
-                System.out.println("10. 打扫");
-                System.out.println("11. 治病");
-                System.out.println("12. 挣钱");
-                System.out.println("13. 购物");
-                System.out.println("0. 返回主菜单");
-                System.out.print("请选择动作编号：");
+//            } else if (x.equalsIgnoreCase("debug_heaven")) {
+//                // 调试：让猫咪直接进入天堂
+//                state.isAscended = true;
+//                state.postNoticeDays = 0;
+//                state.dayCount = 30;
+//                saveStore.write(state);
+//
+//                System.out.println("DEBUG: Cat has ascended to heaven.");
+//                continue;
+//
+//            } else if (x.equalsIgnoreCase("debug_return")) {
+//                // 调试：让猫咪立即从天堂回来
+//                state.isAscended = false;
+//                state.postNoticeDays = 0;
+//                state.dayCount = 0;
+//
+//                saveStore.write(state);
+//
+//                // 回满状态，并奖励/恢复天使猫
+//                CatConditionFile.incAngelCount(condPath);
+//                CatConditionFile.restoreAll(condPath);
+//
+//                System.out.println("DEBUG: Cat has returned from heaven.");
+//                continue;
+//
+//            } else if (x.equalsIgnoreCase("debug_heaven_return")) {
+//                // 调试：一键完成“去天堂 -> 立即回来”
+//                state.isAscended = false;
+//                state.postNoticeDays = 0;
+//                state.dayCount = 0;
+//
+//                saveStore.write(state);
+//
+//                CatConditionFile.incAngelCount(condPath);
+//                CatConditionFile.restoreAll(condPath);
+//
+//                System.out.println("DEBUG: Heaven cycle completed. Cat returned immediately.");
+//                continue;
+//            }
+
+                System.out.println(t("action.enter"));
+                System.out.println(t("action.1"));
+                System.out.println(t("action.2"));
+                System.out.println(t("action.3"));
+                System.out.println(t("action.4"));
+                System.out.println(t("action.5"));
+                System.out.println(t("action.6"));
+                System.out.println(t("action.7"));
+                System.out.println(t("action.8"));
+                System.out.println(t("action.9"));
+                System.out.println(t("action.10"));
+                System.out.println(t("action.11"));
+                System.out.println(t("action.12"));
+                System.out.println(t("action.13"));
+                System.out.println(t("action.0"));
+                System.out.print(t("action.choose"));
                 String action = in.nextLine();
 
                 // ================== 全局负面状态拦截 ==================
@@ -239,7 +664,7 @@ public class Main {
                             !action.equals("13") &&
                             !action.equals("0") &&
                             !action.equalsIgnoreCase("exit")) {
-                        System.out.println("😿 " + state.catName + " 看起来病恹恹的，没有精神理你。请先【治病】！");
+                        System.out.println(t("sick.block.prefix") + state.catName + t("sick.block.suffix"));
                         continue;
                     }
                 }
@@ -253,8 +678,8 @@ public class Main {
                             !action.equals("13") &&
                             !action.equals("0") &&
                             !action.equalsIgnoreCase("exit")) {
-                        System.out.println("💩 猫砂盆太满了，房间里味道很重！" + state.catName + " 心情很烦躁，拒绝了你的互动！");
-                        System.out.println("👉 请先输入 10 进行【打扫】！");
+                        System.out.println(t("poop.block.prefix") + state.catName + t("poop.block.suffix"));
+                        System.out.println(t("poop.clean.prompt"));
                         continue; // 直接跳过本次 switch 循环，不执行动作
                     }
                 }
@@ -267,18 +692,18 @@ public class Main {
                         // 1. 先尝试消耗一份「猫粮」
                         boolean used = CatConditionFile.useItem(goodsPath, "猫粮");
                         if (!used) {
-                        System.out.println("你的猫粮已经用完了，先去商店补货吧。");
+                            System.out.println(t("food.empty"));
                         } else {
                         // 2. 物品数量成功减 1，再去加饥饿度
                         boolean ok = CatConditionFile.feed(condPath, 1, 6); // +1，最多 6 颗 ♥
                         if (ok) {
-                            System.out.println("你给猫喂了一份猫粮，饥饿度 +1。");
+                            System.out.println(t("feed.catfood.ok"));
                             // ===== 新增：吃进去1点，垃圾累加1点 =====
                             state.poopCount += 1;
                             saveStore.write(state);
                         }
                         else {
-                            System.out.println("猫已经吃得很饱了，饥饿度没有再增加。");
+                            System.out.println(t("cat.full"));
                                 }
                             }
                         } catch (java.io.IOException e) {
@@ -373,9 +798,9 @@ public class Main {
                         try {
                             boolean ok = CatConditionFile.drink(condPath, 1, 4); // 口渴度 +1，最多 4 ♥
                             if (ok) {
-                                System.out.println("你给猫喝了一点水，口渴度 +1。");
+                                System.out.println(t("water.ok"));
                             } else {
-                                System.out.println("猫已经不渴了，口渴度没有再增加。");
+                                System.out.println(t("water.full"));
                             }
                         } catch (java.io.IOException e) {
                             System.out.println("喂水时发生错误: " + e.getMessage());
@@ -500,11 +925,11 @@ public class Main {
                         doShopping(scanner, goodsPath);
                     }
                     //System.out.println("你去了商店，买了一些物品。（尚未实现数值变化）");
-                    case "0" -> System.out.println("返回主菜单。");
+                    case "0" -> System.out.println(t("back.main"));
 
                     // ===== 新增这三行：让 exit 直接退出程序 =====
                     case "exit" -> {
-                        System.out.println("退出程序");
+                        System.out.println(t("program.quit"));
                         System.exit(0); // 直接强行结束当前 Java 进程
                     }
                     // =======================================
@@ -514,10 +939,10 @@ public class Main {
                         doTraining(saveStore, state, condPath, in, true); // 作弊训练
                     }
                     //case "cheat" -> showCheatMenu(state); // 作弊菜单，方便测试
-                    default -> System.out.println("无效的动作编号。");
+                    default -> System.out.println(t("action.invalid"));
                     }
             } else if (x.equalsIgnoreCase("x")) {
-                System.out.println("你进入状态显示菜单，可查看宠物状态和物品状态。");
+                System.out.println(t("status.enter"));
                  // 路径：src/main/data/cat_condition.txt
 //            var catPath = java.nio.file.Paths.get(System.getProperty("user.dir"))
 //                .resolve("../data/cat_condition.txt")
@@ -527,18 +952,18 @@ public class Main {
             //     .normalize();
 
             try {
-                System.out.println("===== 宠物状态 =====");
-                if (state.isSick) System.out.println("健康状况：🔴 生病中 (需要治疗)");
-                else System.out.println("健康状况：🟢 健康");
+                System.out.println(t("status.pet.title"));
+                if (state.isSick) System.out.println(t("status.health.sick"));
+                else System.out.println(t("status.health.ok"));
                 java.nio.file.Files.lines(condPath).forEach(System.out::println);
 
-                System.out.println("===== 物品状态 =====");
+                System.out.println(t("status.goods.title"));
                 java.nio.file.Files.lines(goodsPath).forEach(System.out::println);
             } catch (java.io.IOException e) {
-                System.out.println("读取状态文件时出错: " + e.getMessage());
+                System.out.println(t("status.read.fail") + e.getMessage());
             }
             } else if (x.equalsIgnoreCase("c")) {
-                System.out.println("你可重新领养宠物。");
+                System.out.println(t("readopt.available"));
             } else if (x.equalsIgnoreCase("v")) {
                 try {
                     // ================== 新增：猫在天堂时的“召唤”逻辑 ==================
@@ -551,7 +976,7 @@ public class Main {
                             state.postNoticeDays++;
                         } else if (state.lastPostDate != null && state.lastPostDate.equals(today)) {
                             // 情况B：今天已经贴过了 -> 防止玩家一天内狂按V键刷天数
-                            System.out.println("今天已经张贴过寻猫启事啦，心急吃不了热豆腐，明天再来吧！");
+                            System.out.println(t("notice.already.today"));
                             continue; // 阻断后续操作，直接重新循环
                         } else {
                             // 情况C：断连了，或者这是第一天贴 -> 天数重置为 1
@@ -561,11 +986,11 @@ public class Main {
                         // 更新张贴日期并存档
                         state.lastPostDate = today;
                         saveStore.write(state);
-                        System.out.println("📢 你张贴了一张寻猫启事。当前已连续坚持：" + state.postNoticeDays + " 天。");
+                        System.out.println(t("notice.posted.prefix") + state.postNoticeDays + t("notice.posted.suffix"));
 
                         // 2. 判定是否满 7 天
                         if (state.postNoticeDays >= 7) {
-                            System.out.println("🎊 诚心所至，金石为开！你的猫咪从天堂回到了你身边！");
+                            System.out.println(t("notice.return"));
 
                             // 重置状态
                             state.isAscended = false; // 猫咪回归人间
@@ -577,9 +1002,9 @@ public class Main {
                             CatConditionFile.incAngelCount(condPath);
                             CatConditionFile.restoreAll(condPath);
 
-                            System.out.println("（不仅如此，猫咪还为你带回了 1 只新的天使猫作为修行礼物！）");
+                            System.out.println(t("notice.reward"));
                         } else {
-                            System.out.println("距离重逢还需坚持 " + (7 - state.postNoticeDays) + " 天。");
+                            System.out.println(t("notice.remaining.prefix") + (7 - state.postNoticeDays) + t("notice.remaining.suffix"));
                         }
                     }
                     // ================== 原有：猫在人间时的“回血”逻辑 ==================
@@ -591,13 +1016,13 @@ public class Main {
                                 CatConditionFile.decAngelCount(condPath);
                             }
 
-                            System.out.println("天使猫发动，所有状态已恢复！");
+                            System.out.println(t("angel.restore"));
                         } else {
-                            System.out.println("你现在没有天使猫。");
+                            System.out.println(t("angel.none"));
                         }
                     }
                 } catch (IOException e) {
-                    System.out.println("读取/恢复状态时出错：" + e.getMessage());
+                    System.out.println(t("angel.restore.fail") + e.getMessage());
                 }
                 // System.out.println("你可触发天使猫，恢复所有点数到最大值，如果猫咪出走，按此键可张贴寻猫启事，连续张贴7天猫咪回家。");
                 // System.out.println("你使用了天使猫技能，正在恢复所有状态……");
@@ -608,7 +1033,7 @@ public class Main {
                 // System.out.println("恢复状态时出错：" + e.getMessage());
                 // }
             } else {
-                System.out.println("无效输入，请重新输入。");
+                System.out.println(t("invalid.input"));
             }
             System.out.println();
         }  catch (CatConditionFile.CatDiedException e) {
@@ -624,22 +1049,22 @@ public class Main {
                     // 地狱之子，无用天使
                     state.lastTs = System.currentTimeMillis();
                     saveStore.write(state);
-                    System.out.println("天使猫自动发动！已阻止死亡并恢复所有状态。");
+                    System.out.println(t("angel.auto"));
                 } else {
                     System.out.println(e.getMessage());
-                    System.out.print("要重新领养一只新猫吗？(y/N)：");
+                    System.out.print(t("readopt.ask"));
                     String ans = in.nextLine().trim();
 
                     if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
                         resetForReAdopt(savePath, condPath);
                         state = saveStore.read();
-                        System.out.println("你重新领养了一只新的小猫。");
+                        System.out.println(t("readopt.success"));
 
                         // ===== 新增：重新领养后立刻起名 =====
-                        System.out.print("请给新来的小猫起个名字吧：");
+                        System.out.print(t("readopt.name.ask"));
                         state.catName = in.nextLine().trim();
                         if (state.catName.isEmpty()) {
-                            state.catName = "小异端";
+                            state.catName = t("name.default");
                         }
                         saveStore.write(state);
                         // ==================================
@@ -649,18 +1074,63 @@ public class Main {
                         // ==========================
 
                     } else {
-                        System.out.println("已退出程序。");
+                        System.out.println(t("program.exit"));
                         break;
                     }
                 }
             } catch (IOException ex) {
-                System.out.println("天使猫/重置处理失败：" + ex.getMessage());
+                System.out.println(t("angel.reset.fail") + ex.getMessage());
                 break;
             }
         }
     }
         in.close();
     }
+
+    // 库洛米彩蛋核心代码
+    private static void maybeShowKuromiEgg(SaveStore saveStore, SaveStore.SaveState state) throws IOException {
+        java.time.LocalDate today = java.time.LocalDate.now();
+
+        // 每天最多触发一次
+        if (state.lastKuromiEggDate != null && state.lastKuromiEggDate.equals(today.toString())) {
+            return;
+        }
+
+        java.util.Random random = new java.util.Random();
+
+        // 第一次触发概率 1/10；触发过以后，概率降低到 1/50
+        int chance = state.kuromiEggUnlocked ? 50 : 10;
+        //int chance = 1;
+
+        if (random.nextInt(chance) != 0) {
+            return;
+        }
+
+        System.out.println();
+        System.out.println("【隐藏日志：名字修正】");
+        System.out.println();
+        System.out.println("夜深忽梦少年事，梦啼妆泪红阑干。");
+        System.out.println();
+        System.out.println("那时是高三，距离高考已经不远了。");
+        System.out.println("教室、补习班、卷子、晚自习，几乎占满了全部时间。");
+        System.out.println();
+        System.out.println("你看见了一个角色，却不知道她叫什么。");
+        System.out.println("有人说：“骷髅女。”");
+        System.out.println();
+        System.out.println("你差点就这样记住她。");
+        System.out.println();
+        System.out.println("后来，有人认真地写下了她真正的名字：");
+        System.out.println();
+        System.out.println("库洛米。");
+        System.out.println();
+        System.out.println("从此，一个模糊的图像拥有了名字。");
+        System.out.println();
+
+        state.kuromiEggUnlocked = true;
+        state.lastKuromiEggDate = today.toString();
+        saveStore.write(state);
+    }
+
     // isCheat = false  正常训练（有次数限制、有时间与正确性要求）
     // isCheat = true   作弊训练（无次数限制、无时间与正确性要求）
     private static void doTraining(
